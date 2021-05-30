@@ -46,10 +46,10 @@ if __name__ == "__main__":
     # root,dirs,files=os.walk('./mostoolkit/lightning_logs/version_65')
     # print(root)
     modelslist=[]
-    for root,dirs,files in os.walk(r"F:\Forschung\multiorganseg\good"):
+    for root,dirs,files in os.walk(r"F:\Forschung\multiorganseg\good\onlyfresh"):
         for file in files:
             if file.endswith('.ckpt'):
                 modelslist.append(os.path.join(root, file))
     print(modelslist)
-    print(modelslist[3])
-    infer(modelslist[3],r'F:\Forschung\multiorganseg\data\train_2D')
+    print(modelslist[0])
+    infer(modelslist[0],r'F:\Forschung\multiorganseg\data\train_2D')
