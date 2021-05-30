@@ -128,7 +128,7 @@ def get_xform(mode="train", keys=("image", "label","leaky"),leaky=None,leakylist
 #     "right_lung": 2,
 #     "left_lung": 3,
 
-def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4,mode='train',dataset_mode=1):
+def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4,dataset_mode=1):
     data_path=data_path
     root_str,img_list,mask_list = getdataset(data_path)
 
@@ -154,12 +154,9 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
             transform=train_transform__Alllabel,
             num_workers=Input_worker
         )
-        num_alllabel = len(train_ALLlabel_patient_DS)
-        if mode == 'train':
 
-            return train_ALLlabel_patient_DS[:int(num_alllabel * 0.8)],[],[]
-        else:
-            return train_ALLlabel_patient_DS[int(num_alllabel * 0.8):],[],[]
+        return train_ALLlabel_patient_DS,[],[]
+
 
     else :
         print(f'[INFO] Dataset_mode: {dataset_mode}')
@@ -203,13 +200,13 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
     #Todo：对应三种Ds
 
     train_Nolung_patient_DS = monai.data.CacheDataset(
-        data=Nolung_patient,
+        data=Nolung_patient[:100],
         transform=train_transform__Nolung,
         num_workers=Input_worker
 
     )
     train_NoLiver_patient_DS = monai.data.CacheDataset(
-        data=NoLiver_patient,
+        data=NoLiver_patient[:100],
         transform=train_transform__NoLiver,
         num_workers=Input_worker
 
@@ -217,7 +214,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
 
 
     train_ALLlabel_patient_DS = monai.data.CacheDataset(
-        data=Alllabel_patient,
+        data=Alllabel_patient[:100],
         transform=train_transform__Alllabel,
         num_workers=Input_worker
     )
@@ -235,15 +232,8 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
     #     plt.imshow(torch.squeeze(item["label"]))
     #     plt.show()
 
-    num_alllabel=len(train_ALLlabel_patient_DS)
-    num_Nolung=len(train_Nolung_patient_DS)
-    num_NoLiver=len(train_NoLiver_patient_DS)
-    if mode=='train':
-
-        return train_ALLlabel_patient_DS[:int(num_alllabel*0.8)],\
-               train_Nolung_patient_DS[:int(num_Nolung*0.8)],train_NoLiver_patient_DS[:int(num_NoLiver*0.8)]
-    else:
-        return train_ALLlabel_patient_DS[int(num_alllabel*0.8):],train_Nolung_patient_DS[int(num_Nolung*0.8):],train_NoLiver_patient_DS[int(num_NoLiver*0.8):]
+    return train_ALLlabel_patient_DS,\
+           train_Nolung_patient_DS,train_NoLiver_patient_DS
 
 
 

@@ -76,7 +76,7 @@ def cli_main():
     )
 
     # create trainer using pytorch_lightning
-    trainer = pl.Trainer.from_argparse_args(args, callbacks=[ckpt_callback])
+    trainer = pl.Trainer.from_argparse_args(args, callbacks=[ckpt_callback],num_sanity_val_steps=0)
 
     # make the direcrory for the checkpoints
     if not os.path.exists(os.path.join('.', 'lightning_logs', f'version_{trainer.logger.version}')):

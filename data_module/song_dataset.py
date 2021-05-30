@@ -207,6 +207,8 @@ class Song_dataset_2d_with_CacheDataloder(Song_dataset):
     def __init__(self, data_folder, worker, batch_size,mode, **kwargs):
         super().__init__(data_folder, worker, batch_size,mode, **kwargs)
         self.cache_dir = None
+        self.train_ds=None
+        self.val_ds=None
     @staticmethod
     def get_image_and_label_path(data_folder):
         images = sorted(glob.glob(os.path.join(data_folder, '*_ct.nii.gz')))
@@ -221,32 +223,37 @@ class Song_dataset_2d_with_CacheDataloder(Song_dataset):
 
     def setup(self, stage: str = None):
         self.keys = ("image", "label","leaky")
-
-
-
-
-    def train_dataloader(self,cache=None):
         """
 
-                 MODE 1: ALL labeled patients --->30
-                 MODE 2: ALL labeled patients --->15
-                 MODE 3: ALL labeled patients ---10 + NoLiver ---10 + NoLung ---10 --->30
-                 MODE 4: ALL labeled patients ---10 + NoLiver ---10 + NoLung ---10 --->30 with modifiy label/trainstep
+                        MODE 1: ALL labeled patients --->30
+                        MODE 2: ALL labeled patients --->15
+                        MODE 3: ALL labeled patients ---10 + NoLiver ---10 + NoLung ---10 --->30
+                        MODE 4: ALL labeled patients ---10 + NoLiver ---10 + NoLung ---10 --->30 with modifiy label/trainstep
 
-                   """
-        train_ds_alllabel,train_Nolung_patient_DS,train_NoLiver_patient_DS=climain(data_path=self.datafolder,
-                                                                          Input_worker=self.worker,mode='train',
-                                                                          dataset_mode=self.mode)
-
+                          """
+        train_ds_alllabel, train_Nolung_patient_DS, train_NoLiver_patient_DS = climain(data_path=self.datafolder,
+                                                                                       Input_worker=self.worker,
+                                                                                       dataset_mode=self.mode)
         if self.mode==1 or self.mode==2:
-            train_ds=train_ds_alllabel
+            num_alllabel=len(train_ds_alllabel)
+            self.train_ds=train_ds_alllabel[int(num_alllabel*0.8):]
+            self.val_ds=train_ds_alllabel[:int(num_alllabel*0.8)]
         else:
-            train_ds=train_ds_alllabel+train_Nolung_patient_DS+train_NoLiver_patient_DS
+            num_alllabel=len(train_ds_alllabel)
+            num_Nolung=len(train_Nolung_patient_DS)
+            num_NoLiver=len(train_NoLiver_patient_DS)
 
+            self.val_ds=train_ds_alllabel[int(num_alllabel * 0.8):], \
+                                            train_Nolung_patient_DS[int(num_Nolung * 0.8):],\
+                                            train_NoLiver_patient_DS[int(num_NoLiver * 0.8):]
+            self.train_ds = train_ds_alllabel[:int(num_alllabel * 0.8)], \
+                            train_Nolung_patient_DS[:int(num_Nolung * 0.8)], \
+                            train_NoLiver_patient_DS[:int(num_NoLiver * 0.8)]
 
+    def train_dataloader(self,cache=None):
 
         train_loader = monai.data.DataLoader(
-            train_ds,
+            self.train_ds,
             shuffle=True,
             batch_size=self.batch_size,
             num_workers=self.worker,
@@ -256,25 +263,13 @@ class Song_dataset_2d_with_CacheDataloder(Song_dataset):
         return train_loader
 
     def val_dataloader(self,cache=None):
-        # val_transform = self.get_xform(mode="val")
-        # val_ds = monai.data.CacheDataset(
-        #     data=self.val_imgs,
-        #     transform=val_transform,
-        # )
-        val_ds_all,val_Nolung_patient_DS,val_NoLiver_patient_DS=climain(data_path=self.datafolder,
-                                                                    Input_worker=self.worker,mode='val'
-                                                                    ,dataset_mode=self.mode)
-        if self.mode==1 or self.mode==2:
-            val_ds=val_ds_all
-        else:
-            val_ds=val_ds_all+val_Nolung_patient_DS+val_NoLiver_patient_DS
 
 
         val_loader =  monai.data.DataLoader(
-            dataset=val_ds,
+            dataset=self.val_ds,
             batch_size=6,
             num_workers=self.worker,
-            pin_memory=False,
+            pin_memory=torch.cuda.is_available(),
             collate_fn=list_data_collate
         )
         return val_loader
