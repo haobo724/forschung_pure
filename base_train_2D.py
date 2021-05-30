@@ -21,7 +21,7 @@ class BasetRAIN(pl.LightningModule):
 
         self.validation_recall = pl.metrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_precision = pl.metrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
-        self.validation_IOU = pl.metrics.IoU( num_classes=4)
+        self.validation_IOU = pl.metrics.IoU( num_classes=4,absent_score=True)
         if self.hparamss['datasetmode']==4 :
             self.modifiy_label_ON=True
             print(f'[INFO] modifiy_label_ON={self.modifiy_label_ON}')
@@ -168,22 +168,33 @@ class BasetRAIN(pl.LightningModule):
     def test_step(self, batch, batch_idx, dataset_idx=None):
         x, y = batch['image'], batch['label']
         y_hat = self(x)
-
+        iou = self.validation_IOU(torch.nn.functional.softmax(y_hat, dim=1), y.long())
+        print(iou)
         pred=torch.squeeze(y_hat)
         pred=pred.permute(1,2,0)
         pred=torch.softmax(pred,dim=-1)
         picked_channel=pred.argmax(dim=-1)
-        fig, axs = plt.subplots(1, 3)
+        fig, axs = plt.subplots(1,4)
         axs[0].imshow(picked_channel*0.5+x[0,0,...]*0.5)
         axs[1].imshow(picked_channel)
         axs[2].imshow(x[0,0,...])
+        axs[3].imshow(y[0,0,...])
         axs[0].set_title('blend')
         axs[1].set_title('result')
         axs[2].set_title('img')
+        axs[3].set_title('ground truth')
         plt.show()
         loss = self.loss.forward(y_hat, y)
         self.log('test/loss', loss)
-        return {'loss': loss}
+        self.log('test/iou', iou)
+        return {'loss': loss,"iou": iou}
+
+    def test_epoch_end(self, outputs):
+        avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
+        avg_iou = torch.stack([x['iou'] for x in outputs]).mean()
+        self.train_logger.info("Validatoin epoch {} ends, val_loss = {},iou={}".format(self.current_epoch, avg_loss,avg_iou))
+
+
 
 
 

@@ -2,10 +2,10 @@ import os
 import sys
 import torch
 import monai
-import numpy as np
+from argparse import ArgumentParser
 import pytorch_lightning as pl
 from song_dataset import Song_dataset_2d_with_CacheDataloder
-
+import helpers
 import glob
 
 torch.multiprocessing.set_sharing_strategy('file_system')
@@ -16,7 +16,12 @@ from basetrain_song import benchmark_unet_2d
 def infer(models, raw_dir):
     if raw_dir is None or models is None:
         ValueError('raw_dir or model is missing')
-        
+    parser = ArgumentParser()
+    parser = helpers.add_training_args(parser)
+    parser = pl.Trainer.add_argparse_args(parser)
+    parser.add_argument('--datasetmode',type=int, required=True,help='4 mode',default=1)
+    args = parser.parse_args()
+
     images = sorted(glob.glob(os.path.join(raw_dir, '*_ct.nii.gz')))
     labels = sorted(glob.glob(os.path.join(raw_dir, '*_seg.nii.gz')))
     assert len(images) == len(labels)
@@ -33,7 +38,7 @@ def infer(models, raw_dir):
         batch_size=1,
         num_workers=2
     )
-    model = benchmark_unet_2d.load_from_checkpoint(models)
+    model = benchmark_unet_2d.load_from_checkpoint(models,hparams=vars(args))
     trainer=pl.Trainer()
     trainer.test(model,infer_loader)
 
@@ -47,4 +52,4 @@ if __name__ == "__main__":
                 modelslist.append(os.path.join(root, file))
     print(modelslist)
     print(modelslist[3])
-    infer(modelslist[3],'../data/train_2D')
+    infer(modelslist[3],r'F:\Forschung\multiorganseg\data\train_2D')
