@@ -149,7 +149,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
         if mode == 'train':
             Alllabel_patient_train = [
                 {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-                zip(Fulllabel_str_list[int(num_alllabel * 0.8):], Fulllabel_str_list_mask[int(num_alllabel * 0.8):])
+                zip(Fulllabel_str_list[:int(num_alllabel * 0.8)], Fulllabel_str_list_mask[:int(num_alllabel * 0.8)])
             ]
             train_ALLlabel_patient_DS = monai.data.CacheDataset(
                 data=Alllabel_patient_train,
@@ -160,7 +160,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
         else:
             Alllabel_patient_val = [
                 {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-                zip(Fulllabel_str_list[:int(num_alllabel * 0.8)], Fulllabel_str_list_mask[:int(num_alllabel * 0.8)])
+                zip(Fulllabel_str_list[int(num_alllabel * 0.8):], Fulllabel_str_list_mask[int(num_alllabel * 0.8):])
             ]
             val_ALLlabel_patient_DS = monai.data.CacheDataset(
                 data=Alllabel_patient_val,
@@ -196,16 +196,16 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
         keys = ("image", "label","leaky")
         Alllabel_patient= [
             {keys[0]: img, keys[1]: seg, keys[2]:seg} for img, seg in
-            zip(Fulllabel_str_list[int(num_alllabel * 0.8):], Fulllabel_str_list_mask[int(num_alllabel * 0.8):])
+            zip(Fulllabel_str_list[:int(num_alllabel * 0.8)], Fulllabel_str_list_mask[:int(num_alllabel * 0.8)])
         ]
         Nolung_patient = [
             {keys[0]: img, keys[1]: seg, keys[2]:seg} for img, seg in
-            zip(Nolung_str_list[int(num_Nolung * 0.8):], Nolung_str_list_mask[int(num_Nolung * 0.8):])
+            zip(Nolung_str_list[int(num_Nolung * 0.8):], Nolung_str_list_mask[:int(num_Nolung * 0.8)])
         ]
     
         NoLiver_patient = [
             {keys[0]: img, keys[1]: seg,keys[2]:seg} for img, seg in
-            zip(NoLiver_str_list[int(num_NoLiver * 0.8):], NoLiver_str_list_mask[int(num_NoLiver * 0.8):])
+            zip(NoLiver_str_list[:int(num_NoLiver * 0.8)], NoLiver_str_list_mask[:int(num_NoLiver * 0.8)])
         ]
         #Todo：三种transform
         train_transform__Nolung = get_xform(mode=mode,leaky='lung',leakylist=NoLung_name)
@@ -240,16 +240,16 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
         keys = ("image", "label", "leaky")
         Alllabel_patient = [
             {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-            zip(Fulllabel_str_list[:int(num_alllabel * 0.8)], Fulllabel_str_list_mask[:int(num_alllabel * 0.8)])
+            zip(Fulllabel_str_list[int(num_alllabel * 0.8):], Fulllabel_str_list_mask[:int(num_alllabel * 0.8)])
         ]
         Nolung_patient = [
             {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-            zip(Nolung_str_list[:int(num_Nolung * 0.8)], Nolung_str_list_mask[:int(num_Nolung * 0.8)])
+            zip(Nolung_str_list[int(num_Nolung * 0.8):], Nolung_str_list_mask[int(num_Nolung * 0.8):])
         ]
 
         NoLiver_patient = [
             {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-            zip(NoLiver_str_list[:int(num_NoLiver * 0.8)], NoLiver_str_list_mask[:int(num_NoLiver * 0.8)])
+            zip(NoLiver_str_list[int(num_NoLiver * 0.8):], NoLiver_str_list_mask[int(num_NoLiver * 0.8):])
         ]
         # Todo：三种transform
         val_transform__Nolung = get_xform(mode=mode, leaky='lung', leakylist=NoLung_name)
@@ -277,18 +277,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
             num_workers=Input_worker
         )
         return val_ALLlabel_patient_DS, val_Nolung_patient_DS, val_NoLiver_patient_DS
-    # loader=monai.data.DataLoader(
-    #         dataset=train_Nolung_patient_DS,
-    #         batch_size=1,
-    #         num_workers=4,
-    #         pin_memory=True,
-    #         collate_fn=list_data_collate
-    #     )
-    #
-    # for item in loader:
-    #     plt.figure()
-    #     plt.imshow(torch.squeeze(item["label"]))
-    #     plt.show()
+
 
 
 

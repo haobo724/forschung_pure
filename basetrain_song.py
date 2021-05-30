@@ -13,7 +13,6 @@ from loss import CELoss
 
 from argparse import ArgumentParser
 
-from data_module.song_dataset import Visceral_dataset_2d
 from data_module.song_dataset import Song_dataset_2d_with_CacheDataloder
 import helpers as helpers
 from pytorch_lightning.callbacks import ModelCheckpoint
@@ -98,16 +97,9 @@ def cli_main():
         logging.info("cache path rebuilded")
 
 
-    if args.datasetmethod==1:
-        logging.info("PersistentDataset will be used")
-        dm = Visceral_dataset_2d(args.data_folder[0],
-                             worker=args.worker,
-                             batch_size=args.batch_size,
-                             cache_dir=args.cache_dir)
-    else:
-        logging.info("CacheDataset will be used")
+    logging.info("CacheDataset will be used")
 
-        dm = Song_dataset_2d_with_CacheDataloder(args.data_folder[0],
+    dm = Song_dataset_2d_with_CacheDataloder(args.data_folder[0],
                                  worker=args.worker,
                                  batch_size=args.batch_size,
                                  mode=args.datasetmode)
