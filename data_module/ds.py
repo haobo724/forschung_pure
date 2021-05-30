@@ -151,10 +151,9 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
                 {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
                 zip(Fulllabel_str_list[:int(num_alllabel * 0.8)], Fulllabel_str_list_mask[:int(num_alllabel * 0.8)])
             ]
-            train_ALLlabel_patient_DS = monai.data.CacheDataset(
+            train_ALLlabel_patient_DS = monai.data.Dataset(
                 data=Alllabel_patient_train,
                 transform=get_xform(mode=mode, leaky='all'),
-                num_workers=Input_worker
             )
             return train_ALLlabel_patient_DS,[],[]
         else:
@@ -162,10 +161,9 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
                 {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
                 zip(Fulllabel_str_list[int(num_alllabel * 0.8):], Fulllabel_str_list_mask[int(num_alllabel * 0.8):])
             ]
-            val_ALLlabel_patient_DS = monai.data.CacheDataset(
+            val_ALLlabel_patient_DS = monai.data.Dataset(
                 data=Alllabel_patient_val,
                 transform=get_xform(mode=mode, leaky='all'),
-                num_workers=Input_worker
             )
             return val_ALLlabel_patient_DS,[],[]
 
@@ -214,24 +212,21 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
 
         #Todo：对应三种Ds
     
-        train_Nolung_patient_DS = monai.data.CacheDataset(
+        train_Nolung_patient_DS = monai.data.Dataset(
             data=Nolung_patient,
             transform=train_transform__Nolung,
-            num_workers=Input_worker
-    
+
         )
-        train_NoLiver_patient_DS = monai.data.CacheDataset(
+        train_NoLiver_patient_DS = monai.data.Dataset(
             data=NoLiver_patient,
             transform=train_transform__NoLiver,
-            num_workers=Input_worker
-    
+
         )
     
     
-        train_ALLlabel_patient_DS = monai.data.CacheDataset(
+        train_ALLlabel_patient_DS = monai.data.Dataset(
             data=Alllabel_patient,
             transform=train_transform__Alllabel,
-            num_workers=Input_worker
         )
         return train_ALLlabel_patient_DS,train_Nolung_patient_DS,train_NoLiver_patient_DS
     else:
@@ -258,23 +253,20 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
 
         # Todo：对应三种Ds
 
-        val_Nolung_patient_DS = monai.data.CacheDataset(
+        val_Nolung_patient_DS = monai.data.Dataset(
             data=Nolung_patient,
             transform=val_transform__Nolung,
-            num_workers=Input_worker
 
         )
-        val_NoLiver_patient_DS = monai.data.CacheDataset(
+        val_NoLiver_patient_DS = monai.data.Dataset(
             data=NoLiver_patient,
             transform=val_transform__NoLiver,
-            num_workers=Input_worker
 
         )
 
-        val_ALLlabel_patient_DS = monai.data.CacheDataset(
+        val_ALLlabel_patient_DS = monai.data.Dataset(
             data=Alllabel_patient,
             transform=val_transform__Alllabel,
-            num_workers=Input_worker
         )
         return val_ALLlabel_patient_DS, val_Nolung_patient_DS, val_NoLiver_patient_DS
 
