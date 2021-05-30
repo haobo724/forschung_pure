@@ -1,0 +1,409 @@
+{
+  "organs": [
+    {
+      "organ": "liver",
+      "priority": 6,
+      "level": 10
+    },
+    {
+      "organ": "left superior lung lobe",
+      "priority": 11,
+      "level": 3
+    },
+    {
+      "organ": "left inferior lung lobe",
+      "priority": 11,
+      "level": 4
+    },
+    {
+      "organ": "right superior lung lobe",
+      "priority": 11,
+      "level": 6
+    },
+    {
+      "organ": "right middle lung lobe",
+      "priority": 11,
+      "level": 7
+    },
+    {
+      "organ": "right inferior lung lobe",
+      "priority": 11,
+      "level": 8
+    },
+    {
+      "organ": "heart",
+      "priority": 8,
+      "level": 24
+    },
+    {
+      "organ": "right kidney",
+      "priority": 4,
+      "level": 12
+    },
+    {
+      "organ": "left kidney",
+      "priority": 5,
+      "level": 11
+    },
+    {
+      "organ": "left lung",
+      "priority": 9,
+      "level": 2
+    },
+    {
+      "organ": "right lung",
+      "priority": 9,
+      "level": 5
+    },
+    {
+      "organ": "brain",
+      "priority": 2,
+      "level": 28
+    },
+    {
+      "organ": "spleen",
+      "priority": 3,
+      "level": 16
+    },
+    {
+      "organ": "aorta",
+      "priority": 7,
+      "level": 26
+    },
+    {
+      "organ": "skeleton",
+      "priority": 1,
+      "level": 17
+    },
+    {
+      "organ": "bladder",
+      "priority": 12,
+      "level": 13
+    },
+    {
+      "organ": "body",
+      "priority": 0,
+      "level": 1
+    },
+    {
+      "organ": "left femur head",
+      "priority": 12,
+      "level": 19
+    },
+    {
+      "organ": "right femur head",
+      "priority": 12,
+      "level": 20
+    },
+    {
+      "organ": "rectum",
+      "priority": 12,
+      "level": 15
+    },
+    {
+      "organ": "spinal cord",
+      "priority": 16,
+      "level": 22
+    },
+    {
+      "organ": "prostate",
+      "priority": 12,
+      "level": 14
+    },
+    {
+      "organ": "esophagus",
+      "priority": 19,
+      "level": 27
+    },
+    {
+      "organ": "left breast",
+      "priority": 20,
+      "level": 23
+    },
+    {
+      "organ": "right breast",
+      "priority": 20,
+      "level": 25
+    },
+    {
+      "organ": "ribs",
+      "priority": 22,
+      "level": 18
+    },
+    {
+      "organ": "sternum",
+      "priority": 23,
+      "level": 21
+    },
+    {
+      "organ": "bowel bag",
+      "priority": 1,
+      "level": 9
+    },
+    {
+      "organ": "seminal vesicles",
+      "priority": 12,
+      "level": 29
+    },
+    {
+      "organ": "right rib 1",
+      "priority": 24,
+      "level": 30
+    },
+    {
+      "organ": "left rib 1",
+      "priority": 24,
+      "level": 31
+    },
+    {
+      "organ": "right rib 2",
+      "priority": 24,
+      "level": 32
+    },
+    {
+      "organ": "left rib 2",
+      "priority": 24,
+      "level": 33
+    },
+    {
+      "organ": "right rib 3",
+      "priority": 24,
+      "level": 34
+    },
+    {
+      "organ": "left rib 3",
+      "priority": 24,
+      "level": 35
+    },
+    {
+      "organ": "right rib 4",
+      "priority": 24,
+      "level": 36
+    },
+    {
+      "organ": "left rib 4",
+      "priority": 24,
+      "level": 37
+    },
+    {
+      "organ": "right rib 5",
+      "priority": 24,
+      "level": 38
+    },
+    {
+      "organ": "left rib 5",
+      "priority": 24,
+      "level": 39
+    },
+    {
+      "organ": "right rib 6",
+      "priority": 24,
+      "level": 40
+    },
+    {
+      "organ": "left rib 6",
+      "priority": 24,
+      "level": 41
+    },
+    {
+      "organ": "right rib 7",
+      "priority": 24,
+      "level": 42
+    },
+    {
+      "organ": "left rib 7",
+      "priority": 24,
+      "level": 43
+    },
+    {
+      "organ": "right rib 8",
+      "priority": 24,
+      "level": 44
+    },
+    {
+      "organ": "left rib 8",
+      "priority": 24,
+      "level": 45
+    },
+    {
+      "organ": "right rib 9",
+      "priority": 24,
+      "level": 46
+    },
+    {
+      "organ": "left rib 9",
+      "priority": 24,
+      "level": 47
+    },
+    {
+      "organ": "right rib 10",
+      "priority": 24,
+      "level": 48
+    },
+    {
+      "organ": "left rib 10",
+      "priority": 24,
+      "level": 49
+    },
+    {
+      "organ": "right rib 11",
+      "priority": 24,
+      "level": 50
+    },
+    {
+      "organ": "left rib 11",
+      "priority": 24,
+      "level": 51
+    },
+    {
+      "organ": "right rib 12",
+      "priority": 24,
+      "level": 52
+    },
+    {
+      "organ": "left rib 12",
+      "priority": 23,
+      "level": 53
+    },
+    {
+      "organ": "brainstem",
+      "priority": 25,
+      "level": 54
+    },
+    {
+      "organ": "mandible",
+      "priority": 26,
+      "level": 55
+    },
+    {
+      "organ": "left parotid",
+      "priority": 26,
+      "level": 56
+    },
+    {
+      "organ": "right parotid",
+      "priority": 26,
+      "level": 57
+    },
+    {
+      "organ": "supraglottic larynx",
+      "priority": 26,
+      "level": 58
+    },
+    {
+      "organ": "glottis",
+      "priority": 26,
+      "level": 59
+    },
+    {
+      "organ": "left submandibular",
+      "priority": 26,
+      "level": 60
+    },
+    {
+      "organ": "right submandibular",
+      "priority": 26,
+      "level": 61
+    },
+    {
+      "organ": "oral cavity",
+      "priority": 26,
+      "level": 62
+    },
+    {
+      "organ": "lips",
+      "priority": 26,
+      "level": 63
+    },
+    {
+      "organ": "left eye",
+      "priority": 27,
+      "level": 65
+    },
+    {
+      "organ": "right eye",
+      "priority": 27,
+      "level": 64
+    },
+    {
+      "organ": "left lens",
+      "priority": 28,
+      "level": 68
+    },
+    {
+      "organ": "right lens",
+      "priority": 28,
+      "level": 69
+    },
+    {
+      "organ": "left optic nerve",
+      "priority": 29,
+      "level": 67
+    },
+    {
+      "organ": "right optic nerve",
+      "priority": 29,
+      "level": 66
+    },
+    {
+      "organ": "chiasm",
+      "priority": 30,
+      "level": 70
+    },
+    {
+      "organ": "left common iliac node",
+      "priority": 10,
+      "level": 71
+    },
+    {
+      "organ": "right common iliac node",
+      "priority": 10,
+      "level": 72
+    },
+    {
+      "organ": "left external iliac node",
+      "priority": 10,
+      "level": 73
+    },
+    {
+      "organ": "right external iliac node",
+      "priority": 10,
+      "level": 74
+    },
+    {
+      "organ": "left internal iliac node",
+      "priority": 10,
+      "level": 75
+    },
+    {
+      "organ": "right internal iliac node",
+      "priority": 10,
+      "level": 76
+    },
+    {
+      "organ": "left obturator node",
+      "priority": 10,
+      "level": 77
+    },
+    {
+      "organ": "right obturator node",
+      "priority": 10,
+      "level": 78
+    },
+    {
+      "organ": "persacral node",
+      "priority": 10,
+      "level": 79
+    },
+    {
+      "organ": "left brachial plexus",
+      "priority": 10,
+      "level": 80
+    },
+    {
+      "organ": "right brachial plexus",
+      "priority": 10,
+      "level": 81
+    }
+  ]
+}
