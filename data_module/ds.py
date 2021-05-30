@@ -128,7 +128,7 @@ def get_xform(mode="train", keys=("image", "label","leaky"),leaky=None,leakylist
 #     "right_lung": 2,
 #     "left_lung": 3,
 
-def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4,dataset_mode=1):
+def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4,mode='train',dataset_mode=1):
     data_path=data_path
     root_str,img_list,mask_list = getdataset(data_path)
 
@@ -144,19 +144,30 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
         Fulllabel_str_list, Fulllabel_str_list_mask = leakylabel_generator(img_list, mask_list, fulllabeled_name_sub,
                                                                            root_str)
         keys = ("image", "label","leaky")
-        Alllabel_patient= [
-            {keys[0]: img, keys[1]: seg, keys[2]:seg} for img, seg in
-            zip(Fulllabel_str_list, Fulllabel_str_list_mask)
-        ]
-        train_transform__Alllabel = get_xform(mode=mode, leaky='all')
-        train_ALLlabel_patient_DS = monai.data.CacheDataset(
-            data=Alllabel_patient,
-            transform=train_transform__Alllabel,
-            num_workers=Input_worker
-        )
+        num_alllabel = len(Fulllabel_str_list)
 
-        return train_ALLlabel_patient_DS,[],[]
-
+        if mode == 'train':
+            Alllabel_patient_train = [
+                {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
+                zip(Fulllabel_str_list[int(num_alllabel * 0.8):], Fulllabel_str_list_mask[int(num_alllabel * 0.8):])
+            ]
+            train_ALLlabel_patient_DS = monai.data.CacheDataset(
+                data=Alllabel_patient_train,
+                transform=get_xform(mode=mode, leaky='all'),
+                num_workers=Input_worker
+            )
+            return train_ALLlabel_patient_DS,[],[]
+        else:
+            Alllabel_patient_val = [
+                {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
+                zip(Fulllabel_str_list[:int(num_alllabel * 0.8)], Fulllabel_str_list_mask[:int(num_alllabel * 0.8)])
+            ]
+            val_ALLlabel_patient_DS = monai.data.CacheDataset(
+                data=Alllabel_patient_val,
+                transform=get_xform(mode=mode, leaky='all'),
+                num_workers=Input_worker
+            )
+            return val_ALLlabel_patient_DS,[],[]
 
     else :
         print(f'[INFO] Dataset_mode: {dataset_mode}')
@@ -175,50 +186,97 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
     Fulllabel_str_list, Fulllabel_str_list_mask=leakylabel_generator(img_list, mask_list, fulllabeled_name_sub, root_str)
     Nolung_str_list, Nolung_str_list_mask=leakylabel_generator(img_list, mask_list, NoLung_name, root_str)
     NoLiver_str_list, NoLiver_str_list_mask=leakylabel_generator(img_list, mask_list, NoLiver_name, root_str)
+   
+    num_alllabel=len(Fulllabel_str_list)
+    num_Nolung=len(Nolung_str_list)
+    num_NoLiver=len(NoLiver_str_list)
+    if mode=='train':
+        # TODO: 转化为dict
+    
+        keys = ("image", "label","leaky")
+        Alllabel_patient= [
+            {keys[0]: img, keys[1]: seg, keys[2]:seg} for img, seg in
+            zip(Fulllabel_str_list[int(num_alllabel * 0.8):], Fulllabel_str_list_mask[int(num_alllabel * 0.8):])
+        ]
+        Nolung_patient = [
+            {keys[0]: img, keys[1]: seg, keys[2]:seg} for img, seg in
+            zip(Nolung_str_list[int(num_Nolung * 0.8):], Nolung_str_list_mask[int(num_Nolung * 0.8):])
+        ]
+    
+        NoLiver_patient = [
+            {keys[0]: img, keys[1]: seg,keys[2]:seg} for img, seg in
+            zip(NoLiver_str_list[int(num_NoLiver * 0.8):], NoLiver_str_list_mask[int(num_NoLiver * 0.8):])
+        ]
+        #Todo：三种transform
+        train_transform__Nolung = get_xform(mode=mode,leaky='lung',leakylist=NoLung_name)
+        train_transform__NoLiver = get_xform(mode=mode,leaky='liver',leakylist=NoLiver_name)
+        train_transform__Alllabel = get_xform(mode=mode,leaky='all')
 
-    # TODO: 转化为dict
+        #Todo：对应三种Ds
+    
+        train_Nolung_patient_DS = monai.data.CacheDataset(
+            data=Nolung_patient,
+            transform=train_transform__Nolung,
+            num_workers=Input_worker
+    
+        )
+        train_NoLiver_patient_DS = monai.data.CacheDataset(
+            data=NoLiver_patient,
+            transform=train_transform__NoLiver,
+            num_workers=Input_worker
+    
+        )
+    
+    
+        train_ALLlabel_patient_DS = monai.data.CacheDataset(
+            data=Alllabel_patient,
+            transform=train_transform__Alllabel,
+            num_workers=Input_worker
+        )
+        return train_ALLlabel_patient_DS,train_Nolung_patient_DS,train_NoLiver_patient_DS
+    else:
+        # TODO: 转化为dict
 
-    keys = ("image", "label","leaky")
-    Alllabel_patient= [
-        {keys[0]: img, keys[1]: seg, keys[2]:seg} for img, seg in
-        zip(Fulllabel_str_list, Fulllabel_str_list_mask)
-    ]
-    Nolung_patient = [
-        {keys[0]: img, keys[1]: seg, keys[2]:seg} for img, seg in
-        zip(Nolung_str_list, Nolung_str_list_mask)
-    ]
+        keys = ("image", "label", "leaky")
+        Alllabel_patient = [
+            {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
+            zip(Fulllabel_str_list[:int(num_alllabel * 0.8)], Fulllabel_str_list_mask[:int(num_alllabel * 0.8)])
+        ]
+        Nolung_patient = [
+            {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
+            zip(Nolung_str_list[:int(num_Nolung * 0.8)], Nolung_str_list_mask[:int(num_Nolung * 0.8)])
+        ]
 
-    NoLiver_patient = [
-        {keys[0]: img, keys[1]: seg,keys[2]:seg} for img, seg in
-        zip(NoLiver_str_list, NoLiver_str_list_mask)
-    ]
-    #Todo：三种transform
-    train_transform__Nolung = get_xform(mode=mode,leaky='lung',leakylist=NoLung_name)
-    train_transform__NoLiver = get_xform(mode=mode,leaky='liver',leakylist=NoLiver_name)
-    train_transform__Alllabel = get_xform(mode=mode,leaky='all')
+        NoLiver_patient = [
+            {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
+            zip(NoLiver_str_list[:int(num_NoLiver * 0.8)], NoLiver_str_list_mask[:int(num_NoLiver * 0.8)])
+        ]
+        # Todo：三种transform
+        val_transform__Nolung = get_xform(mode=mode, leaky='lung', leakylist=NoLung_name)
+        val_transform__NoLiver = get_xform(mode=mode, leaky='liver', leakylist=NoLiver_name)
+        val_transform__Alllabel = get_xform(mode=mode, leaky='all')
 
-    #Todo：对应三种Ds
+        # Todo：对应三种Ds
 
-    train_Nolung_patient_DS = monai.data.CacheDataset(
-        data=Nolung_patient[:100],
-        transform=train_transform__Nolung,
-        num_workers=Input_worker
+        val_Nolung_patient_DS = monai.data.CacheDataset(
+            data=Nolung_patient,
+            transform=val_transform__Nolung,
+            num_workers=Input_worker
 
-    )
-    train_NoLiver_patient_DS = monai.data.CacheDataset(
-        data=NoLiver_patient[:100],
-        transform=train_transform__NoLiver,
-        num_workers=Input_worker
+        )
+        val_NoLiver_patient_DS = monai.data.CacheDataset(
+            data=NoLiver_patient,
+            transform=val_transform__NoLiver,
+            num_workers=Input_worker
 
-    )
+        )
 
-
-    train_ALLlabel_patient_DS = monai.data.CacheDataset(
-        data=Alllabel_patient[:100],
-        transform=train_transform__Alllabel,
-        num_workers=Input_worker
-    )
-
+        val_ALLlabel_patient_DS = monai.data.CacheDataset(
+            data=Alllabel_patient,
+            transform=val_transform__Alllabel,
+            num_workers=Input_worker
+        )
+        return val_ALLlabel_patient_DS, val_Nolung_patient_DS, val_NoLiver_patient_DS
     # loader=monai.data.DataLoader(
     #         dataset=train_Nolung_patient_DS,
     #         batch_size=1,
@@ -231,10 +289,6 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
     #     plt.figure()
     #     plt.imshow(torch.squeeze(item["label"]))
     #     plt.show()
-
-    return train_ALLlabel_patient_DS,\
-           train_Nolung_patient_DS,train_NoLiver_patient_DS
-
 
 
 

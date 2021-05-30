@@ -4,7 +4,7 @@ import torch
 import monai
 import numpy as np
 import pytorch_lightning as pl
-from data_module.song_dataset import Visceral_dataset_2d
+from song_dataset import Song_dataset_2d_with_CacheDataloder
 
 import glob
 
@@ -26,7 +26,7 @@ def infer(models, raw_dir):
         {keys[0]: img, keys[1]: seg} for img, seg in
         zip(images[350:360], labels[350:360])
     ]
-    infer_xform = Visceral_dataset_2d.get_xform(mode="val")
+    infer_xform = Song_dataset_2d_with_CacheDataloder.get_xform(mode="val")
     infer_ds = monai.data.CacheDataset(data=val_imgs, transform=infer_xform)
     infer_loader = monai.data.DataLoader(
         infer_ds,

@@ -132,10 +132,64 @@ class Song_dataset(pl.LightningDataModule):
 
 
 # @pl.data_loader
-class Visceral_dataset_2d(Song_dataset):
-    def __init__(self, data_folder, worker, batch_size, **kwargs):
-        super().__init__(data_folder, worker, batch_size, **kwargs)
-        self.cache_dir = kwargs.get("cache_dir", ".\\tmp\\visceral-2d")
+# class Visceral_dataset_2d(Song_dataset):
+#     def __init__(self, data_folder, worker, batch_size, **kwargs):
+#         super().__init__(data_folder, worker, batch_size, **kwargs)
+#         self.cache_dir = kwargs.get("cache_dir", ".\\tmp\\visceral-2d")
+#     @staticmethod
+#     def get_image_and_label_path(data_folder):
+#         images = sorted(glob.glob(os.path.join(data_folder, '*_ct.nii.gz')))
+#         labels = sorted(glob.glob(os.path.join(data_folder, '*_seg.nii.gz')))
+#         assert len(images) == len(labels)
+#         return images, labels
+#
+#     @staticmethod
+#     def get_xform(mode="train", keys=("image", "label")):
+#         xforms = [
+#             mxform.LoadImaged(keys),
+#             custom_transform.Transposed(keys, (1, 0)),
+#             mxform.AddChanneld(keys),
+#             custom_transform.NormalizeLabeld(keys=['label'], from_list=[0,7, 8, 6], to_list=[0,1, 2, 3]),
+#             mxform.ScaleIntensityRanged(keys[0], a_min=-1024., a_max=3000., b_min=-1, b_max=1, clip=True),
+#             # mxform.Spacingd(keys, pixdim=[0.89, 0.89, 1.5], mode=("bilinear", "nearest"))
+#             # mxform.Resized(keys, spatial_size=(256,256), mode='nearest')
+#             mxform.SpatialPadd(keys, spatial_size=(512, 512), mode="reflect"),
+#             mxform.CenterSpatialCropd(keys, roi_size=[512, 512]),
+#         ]
+#         if mode == "train":
+#             xforms.extend([
+#                 mxform.RandAffined(
+#                     keys,
+#                     prob=0.15,
+#                     rotate_range=(-0.05, 0.05),
+#                     scale_range=(-0.1, 0.1),
+#                     mode=("bilinear", "nearest"),
+#                     as_tensor_output=False,
+#                 ),
+#                 # mxform.RandSpatialCropd(keys, roi_size=[192, 192, 1], random_size=False),
+#                 # mxform.RandSpatialCropSamplesd(keys, roi_size=[-1, -1, 1], num_samples=10, random_size=False),  # random_size=False?
+#                 # mxform.SqueezeDimd(keys, -1)
+#             ])
+#             # dtype = (np.float32, np.uint8)
+#             dtype = (np.float32, np.float32)
+#         elif mode == "val":
+#             dtype = (np.float32, np.float32)
+#         elif mode == "infer":
+#             xforms = xforms[:-2]
+#             dtype = (np.float32, )
+#         xforms.extend([
+#             mxform.CastToTyped(keys, dtype=dtype),
+#             mxform.ToTensord(keys)
+#         ])
+#         return mxform.Compose(xforms)
+
+
+class Song_dataset_2d_with_CacheDataloder(Song_dataset):
+    def __init__(self, data_folder, worker, batch_size,mode, **kwargs):
+        super().__init__(data_folder, worker, batch_size,mode, **kwargs)
+        self.cache_dir = None
+        self.train_ds=None
+        self.val_ds=None
     @staticmethod
     def get_image_and_label_path(data_folder):
         images = sorted(glob.glob(os.path.join(data_folder, '*_ct.nii.gz')))
@@ -144,22 +198,23 @@ class Visceral_dataset_2d(Song_dataset):
         return images, labels
 
     @staticmethod
-    def get_xform(mode="train", keys=("image", "label")):
+    def get_xform(mode="train", keys=("image", "label", "leaky"), leaky=None, leakylist=None):
         xforms = [
-            mxform.LoadImaged(keys),
-            custom_transform.Transposed(keys, (1, 0)),
-            mxform.AddChanneld(keys),
-            custom_transform.NormalizeLabeld(keys=['label'], from_list=[0,7, 8, 6], to_list=[0,1, 2, 3]),
+            mxform.LoadImaged(keys[:2]),
+            custom_transform.Transposed(keys[:2], (1, 0)),
+            mxform.AddChanneld(keys[:2]),
+            custom_transform.NormalizeLabeld(keys=['label'], from_list=[0, 7, 8, 6], to_list=[0, 1, 2, 3]),
+            # custom_transform.Leakylabel(keys=["leaky"]),
             mxform.ScaleIntensityRanged(keys[0], a_min=-1024., a_max=3000., b_min=-1, b_max=1, clip=True),
-            # mxform.Spacingd(keys, pixdim=[0.89, 0.89, 1.5], mode=("bilinear", "nearest"))
-            # mxform.Resized(keys, spatial_size=(256,256), mode='nearest')
-            mxform.SpatialPadd(keys, spatial_size=(512, 512), mode="reflect"),
-            mxform.CenterSpatialCropd(keys, roi_size=[512, 512]),
+            # # mxform.Spacingd(keys, pixdim=[0.89, 0.89, 1.5], mode=("bilinear", "nearest"))
+            # # mxform.Resized(keys, spatial_size=(256,256), mode='nearest')
+            mxform.SpatialPadd(keys[:2], spatial_size=(512, 512), mode="reflect"),
+            mxform.CenterSpatialCropd(keys[:2], roi_size=[512, 512]),
         ]
         if mode == "train":
             xforms.extend([
                 mxform.RandAffined(
-                    keys,
+                    keys[:2],
                     prob=0.15,
                     rotate_range=(-0.05, 0.05),
                     scale_range=(-0.1, 0.1),
@@ -176,79 +231,63 @@ class Visceral_dataset_2d(Song_dataset):
             dtype = (np.float32, np.float32)
         elif mode == "infer":
             xforms = xforms[:-2]
-            dtype = (np.float32, )
+            dtype = (np.float32,)
+
+        if leaky == 'lung':
+            xforms.extend([
+                custom_transform.Leakylabel(keys=["leaky"], leakylist=leakylist, leaky=leaky),
+                custom_transform.NormalizeLabeld(keys=['label'], from_list=[0, 1, 2, 3], to_list=[0, 0, 2, 3]),
+
+            ])
+        elif leaky == 'liver':
+            xforms.extend([
+                custom_transform.Leakylabel(keys=["leaky"], leakylist=leakylist, leaky=leaky),
+                custom_transform.NormalizeLabeld(keys=['label'], from_list=[0, 1, 2, 3], to_list=[0, 1, 0, 0]),
+
+            ])
+        else:
+            xforms.extend([
+                custom_transform.LeakylabelALLFALSE(keys=["leaky"]),
+                # mxform.CastToTyped(keys[-1], dtype=torch.bool),
+
+                # mxform.ToTensord(keys[-1]),
+
+            ])
         xforms.extend([
-            mxform.CastToTyped(keys, dtype=dtype),
-            mxform.ToTensord(keys)
+            mxform.CastToTyped(keys[:2], dtype=dtype),
+            mxform.ToTensord(keys[:2])
         ])
         return mxform.Compose(xforms)
 
-    def val_dataloader(self, cache=True):
-        val_transform = self.get_xform(mode="val")
-        cache_dir = None
-        if cache:
-            cache_dir = self.cache_dir
-
-        val_ds = monai.data.PersistentDataset(
-            data=self.val_imgs,
-            transform=val_transform,
-            cache_dir=cache_dir
-        )
-        val_loader = DataLoader(
-            dataset=val_ds,
-            batch_size=5,
-            num_workers=self.worker,
-            pin_memory=False,
-            collate_fn=list_data_collate
-        )
-        return val_loader
-
-class Song_dataset_2d_with_CacheDataloder(Song_dataset):
-    def __init__(self, data_folder, worker, batch_size,mode, **kwargs):
-        super().__init__(data_folder, worker, batch_size,mode, **kwargs)
-        self.cache_dir = None
-        self.train_ds=None
-        self.val_ds=None
-    @staticmethod
-    def get_image_and_label_path(data_folder):
-        images = sorted(glob.glob(os.path.join(data_folder, '*_ct.nii.gz')))
-        labels = sorted(glob.glob(os.path.join(data_folder, '*_seg.nii.gz')))
-        assert len(images) == len(labels)
-        return images, labels
-
-    @staticmethod
-    def get_xform(mode="train", keys=("image", "label")):
-        pass
+    #     "liver": 1,
+    #     "right_lung": 2,
+    #     "left_lung": 3,
 
 
     def setup(self, stage: str = None):
         self.keys = ("image", "label","leaky")
         """
 
-                        MODE 1: ALL labeled patients --->30
-                        MODE 2: ALL labeled patients --->15
-                        MODE 3: ALL labeled patients ---10 + NoLiver ---10 + NoLung ---10 --->30
-                        MODE 4: ALL labeled patients ---10 + NoLiver ---10 + NoLung ---10 --->30 with modifiy label/trainstep
+        MODE 1: ALL labeled patients --->30
+        MODE 2: ALL labeled patients --->15
+        MODE 3: ALL labeled patients ---10 + NoLiver ---10 + NoLung ---10 --->30
+        MODE 4: ALL labeled patients ---10 + NoLiver ---10 + NoLung ---10 --->30 with modifiy label/trainstep
 
-                          """
+        """
         train_ds_alllabel, train_Nolung_patient_DS, train_NoLiver_patient_DS = climain(data_path=self.datafolder,
+                                                                                       Input_worker=self.worker,mode='train',
+                                                                                       dataset_mode=self.mode)
+        val_ds_alllabel, val_Nolung_patient_DS, val_NoLiver_patient_DS = climain(data_path=self.datafolder,
                                                                                        Input_worker=self.worker,
+                                                                                       mode='val',
                                                                                        dataset_mode=self.mode)
         if self.mode==1 or self.mode==2:
-            num_alllabel=len(train_ds_alllabel)
-            self.train_ds=train_ds_alllabel[int(num_alllabel*0.8):]
-            self.val_ds=train_ds_alllabel[:int(num_alllabel*0.8)]
+            self.train_ds=train_ds_alllabel
+            self.val_ds=val_ds_alllabel
         else:
-            num_alllabel=len(train_ds_alllabel)
-            num_Nolung=len(train_Nolung_patient_DS)
-            num_NoLiver=len(train_NoLiver_patient_DS)
 
-            self.val_ds=train_ds_alllabel[int(num_alllabel * 0.8):], \
-                                            train_Nolung_patient_DS[int(num_Nolung * 0.8):],\
-                                            train_NoLiver_patient_DS[int(num_NoLiver * 0.8):]
-            self.train_ds = train_ds_alllabel[:int(num_alllabel * 0.8)], \
-                            train_Nolung_patient_DS[:int(num_Nolung * 0.8)], \
-                            train_NoLiver_patient_DS[:int(num_NoLiver * 0.8)]
+            self.val_ds=val_ds_alllabel+val_Nolung_patient_DS+val_NoLiver_patient_DS
+            self.train_ds = train_ds_alllabel+train_Nolung_patient_DS+ train_NoLiver_patient_DS
 
     def train_dataloader(self,cache=None):
 
