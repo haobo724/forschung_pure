@@ -119,7 +119,7 @@ class BasetRAIN(pl.LightningModule):
         precision = self.validation_precision(torch.nn.functional.softmax(pred, dim=1), y_copy.long())
         iou = self.validation_IOU(torch.nn.functional.softmax(pred, dim=1), y_copy.long())
         iou_individual = self.validation_IOU2(torch.nn.functional.softmax(pred, dim=1), y_copy.long())
-        dice_individual=dice_score(torch.nn.functional.softmax(pred, dim=1),y.squeeze(1).long(),reduction='none',bg=True)[:4]
+        dice_individual=dice_score(torch.nn.functional.softmax(pred, dim=1),y.squeeze(1).long(),reduction='none',bg=True,no_fg_score=1)[:4]
 
         self.log("recall", loss, on_step=False,on_epoch=True,prog_bar=True)
         self.log("precision", precision, on_step=False,on_epoch=True,prog_bar=True)
@@ -161,15 +161,15 @@ class BasetRAIN(pl.LightningModule):
         avg_recall = torch.stack([x['recall'] for x in outputs]).mean()
         avg_precision = torch.stack([x['precision'] for x in outputs]).mean()
         avg_iou = torch.stack([x['iou'] for x in outputs]).mean()
-        avg_iou_individual = torch.stack([x['iou_individual'] for x in outputs]).mean()
-        avg_dice = torch.stack([x['dice'] for x in outputs]).mean()
+        avg_iou_individual = torch.mean(torch.stack([x['iou_individual'] for x in outputs]),dim=0)
+        avg_dice_individual = torch.mean(torch.stack([x['dice'] for x in outputs]),dim=0)
         self.train_logger.info(f"Validatoin epoch {self.current_epoch} ends, val_loss = {avg_loss}, avg_iou_individual ={ avg_iou_individual}")
         self.log('valid/loss', avg_loss)
         self.log('valid/recall', avg_recall)
         self.log('valid/precision', avg_precision)
         self.log('valid/IOU', avg_iou)
         self.log('valid/iou_individual', avg_iou_individual)
-        self.log('valid/dice', avg_dice)
+        self.log('valid/dice', avg_dice_individual)
     def configure_optimizers(self):
         if self.hparamss['opt']=='Adam':
             print('[INFO] Adam will be used')
