@@ -26,19 +26,19 @@ def infer(models, raw_dir):
     # images = sorted(glob.glob(os.path.join(raw_dir, '*_ct.nii.gz')))
     # labels = sorted(glob.glob(os.path.join(raw_dir, '*_seg.nii.gz')))
     # assert len(images) == len(labels)
-    # keys = ("image", "label")
+    # keys = ("image", "label","leaky")
     #
     # val_imgs = [
-    #     {keys[0]: img, keys[1]: seg} for img, seg in
+    #     {keys[0]: img, keys[1]: seg, keys[2]:seg} for img, seg in
     #     zip(images[350:360], labels[350:360])
     # ]
-    # infer_xform = Song_dataset_2d_with_CacheDataloder.get_xform(mode="val")
+    # infer_xform = Song_dataset_2d_with_CacheDataloder.get_xform(mode="infer")
     # infer_ds = monai.data.CacheDataset(data=val_imgs, transform=infer_xform)
 
-    infer_ds,_,_=climain(args.data_folder[0],Input_worker=4,mode='val',dataset_mode=5)
+    infer_ds,_,_=climain(args.data_folder[0],Input_worker=4,mode='test',dataset_mode=5)
     infer_loader = monai.data.DataLoader(
         infer_ds,
-        batch_size=1,
+        batch_size=2,
         num_workers=4
     )
     model = benchmark_unet_2d.load_from_checkpoint(models,hparams=vars(args))

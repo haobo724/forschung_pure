@@ -57,8 +57,8 @@ def cli_main():
     parser = helpers.add_training_args(parser)
     parser = pl.Trainer.add_argparse_args(parser)
     parser = benchmark_unet_2d.add_model_specific_args(parser)
-    parser.add_argument('--datasetmethod',type=int, help='1:PersistentDataset other:CacheDataset')
     parser.add_argument('--datasetmode',type=int, required=True,help='4 mode',default=1)
+    parser.add_argument('--opt',type=str, required=True,help='2 optimizers',default='Adam')
     args = parser.parse_args()
 
     # create the pipeline
@@ -66,38 +66,31 @@ def cli_main():
 
     # Ckpt callbacks
     ckpt_callback = ModelCheckpoint(
-        # dirpath='.\\lightning_logs\\debug_network',
         monitor='valid/loss',
         save_top_k=2,
-        save_last=True,
         mode='min',
-        filename='{epoch:02d}-{val_loss:.2f}'
+        filename='{epoch:02d}-{avg_iou_individual:02f}'
     )
 
     # create trainer using pytorch_lightning
     trainer = pl.Trainer.from_argparse_args(args, callbacks=[ckpt_callback],num_sanity_val_steps=0)
 
     # make the direcrory for the checkpoints
-    if not os.path.exists(os.path.join('.', 'lightning_logs', f'version_{trainer.logger.version}')):
-        os.makedirs(os.path.join('.', 'lightning_logs', f'version_{trainer.logger.version}'))
+    if not os.path.exists(os.path.join('.', 'lightning_logs', f'version_{trainer.logger.version}_mode{args.datasetmode}')):
+        os.makedirs(os.path.join('.', 'lightning_logs', f'version_{trainer.logger.version}_mode{args.datasetmode}'))
 
     # configuration of event log
     helpers.logging_init(log_fname=os.path.join('.', 'lightning_logs',
-                                                f'version_{trainer.logger.version}',
+                                                f'version_{trainer.logger.version}_mode{args.datasetmode}',
                                                 f'{fname}.log'),
                          log_lvl=logging.INFO)
-    logging.info(f'Manual logging starts. Model version: {trainer.logger.version}')
+    logging.info(f'Manual logging starts. Model version: {trainer.logger.version}_mode{args.datasetmode}')
 
     # configure data module
     logging.info(f'dataset from {args.data_folder}')
-    if os.path.exists(args.cache_dir):
-        shutil.rmtree(args.cache_dir)
-        logging.info("cache cleaned")
-        os.makedirs(args.cache_dir)
-        logging.info("cache path rebuilded")
 
 
-    logging.info("CacheDataset will be used")
+
 
     dm = Song_dataset_2d_with_CacheDataloder(args.data_folder[0],
                                  worker=args.worker,
@@ -109,7 +102,7 @@ def cli_main():
     # training
     trainer.fit(net, dm)
     trainer.save_checkpoint(
-        os.path.join('.', 'lightning_logs', f'version_{trainer.logger.version}', 'final.ckpt'))
+        os.path.join('.', 'lightning_logs', f'version_{trainer.logger.version}_mode{args.datasetmode}', 'final.ckpt'))
     logging.info("!!!!!!!!!!!!!!This is the end of the training!!!!!!!!!!!!!!!!!!!!!!")
     print('THE END')
 

@@ -28,7 +28,6 @@ def add_training_args(parent_parser):
     parser = ArgumentParser(parents=[parent_parser], add_help=False)
 
     parser.add_argument('--data_folder', nargs='+', type=str, default='/cluster/liu/data/')
-    parser.add_argument('--cache_dir', type=str, default="/cluster/liu/project/tmp/monai")
     # parser.add_argument("--log_path", type=str, default='train')
     parser.add_argument('--cluster', type=bool, default=False)
     parser.add_argument("--worker", type=int, default=8)

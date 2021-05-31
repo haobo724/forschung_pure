@@ -6,7 +6,7 @@ import torch
 import logging
 import numpy as np
 import pytorch_lightning as pl
-
+from torchmetrics.functional import dice_score
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 sys.path.append(os.path.dirname(__file__))
@@ -18,10 +18,10 @@ class BasetRAIN(pl.LightningModule):
         self.loss = None
         self.hparamss = hparams
         self.train_logger = logging.getLogger(__name__)
-
         self.validation_recall = pl.metrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_precision = pl.metrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_IOU = pl.metrics.IoU( num_classes=4,absent_score=True)
+        self.validation_IOU2 = pl.metrics.IoU( num_classes=4,absent_score=True,reduction='none')
         if self.hparamss['datasetmode']==4 :
             self.modifiy_label_ON=True
             print(f'[INFO] modifiy_label_ON={self.modifiy_label_ON}')
@@ -114,15 +114,18 @@ class BasetRAIN(pl.LightningModule):
 
         loss = self.loss.forward(pred, y_copy).cpu()
 
-        # loss = self.loss.forward(pred, y).cpu()
-
         # argmax
         recall = self.validation_recall(torch.nn.functional.softmax(pred, dim=1), y_copy.long())
         precision = self.validation_precision(torch.nn.functional.softmax(pred, dim=1), y_copy.long())
         iou = self.validation_IOU(torch.nn.functional.softmax(pred, dim=1), y_copy.long())
+        iou_individual = self.validation_IOU2(torch.nn.functional.softmax(pred, dim=1), y_copy.long())
+        dice_individual=dice_score(torch.nn.functional.softmax(pred, dim=1),y.squeeze(1).long(),reduction='none',bg=True)[:4]
+
         self.log("recall", loss, on_step=False,on_epoch=True,prog_bar=True)
-        self.log("precision", loss, on_step=False,on_epoch=True,prog_bar=True)
-        self.log("iou", loss, on_step=False,on_epoch=True,prog_bar=True)
+        self.log("precision", precision, on_step=False,on_epoch=True,prog_bar=True)
+        self.log("iou", iou, on_step=False,on_epoch=True,prog_bar=True)
+        self.log("iou_individual", iou_individual, on_step=False,on_epoch=True,prog_bar=True)
+        self.log("dice", dice_individual, on_step=False,on_epoch=True,prog_bar=True)
 
         pred = torch.argmax(pred, dim=1).unsqueeze(1)
         if batch_idx == 0:
@@ -143,7 +146,9 @@ class BasetRAIN(pl.LightningModule):
         return {"loss": loss, 
                 "recall": recall, 
                 "precision": precision,
-                "iou": iou}
+                "iou": iou,
+                "iou_individual": iou_individual,
+                "dice": dice_individual}
 
     def training_epoch_end(self, outputs):
 
@@ -156,45 +161,61 @@ class BasetRAIN(pl.LightningModule):
         avg_recall = torch.stack([x['recall'] for x in outputs]).mean()
         avg_precision = torch.stack([x['precision'] for x in outputs]).mean()
         avg_iou = torch.stack([x['iou'] for x in outputs]).mean()
-        self.train_logger.info("Validatoin epoch {} ends, val_loss = {}".format(self.current_epoch, avg_loss))
+        avg_iou_individual = torch.stack([x['iou_individual'] for x in outputs]).mean()
+        avg_dice = torch.stack([x['dice'] for x in outputs]).mean()
+        self.train_logger.info(f"Validatoin epoch {self.current_epoch} ends, val_loss = {avg_loss}, avg_iou_individual ={ avg_iou_individual}")
         self.log('valid/loss', avg_loss)
         self.log('valid/recall', avg_recall)
         self.log('valid/precision', avg_precision)
         self.log('valid/IOU', avg_iou)
-
+        self.log('valid/iou_individual', avg_iou_individual)
+        self.log('valid/dice', avg_dice)
     def configure_optimizers(self):
-        # return torch.optim.RMSprop(self.parameters(), lr=self.hparams['lr'])
-        return torch.optim.Adam(self.parameters(), lr=self.hparamss['lr'])
+        if self.hparamss['opt']=='Adam':
+            print('[INFO] Adam will be used')
+            return torch.optim.Adam(self.parameters(), lr=self.hparamss['lr'])
+        else:
+            print('[INFO] SGD will be used')
+            return torch.optim.SGD(self.parameters(), lr=self.hparamss['lr'])
+
     def test_step(self, batch, batch_idx, dataset_idx=None):
         x, y = batch['image'], batch['label']
         y_hat = self(x)
         iou = self.validation_IOU(torch.nn.functional.softmax(y_hat, dim=1), y.long())
+        iou2 = self.validation_IOU2(torch.nn.functional.softmax(y_hat, dim=1), y.long())
         print(iou)
-        pred=torch.squeeze(y_hat)
-        pred=pred.permute(1,2,0)
-        pred=torch.softmax(pred,dim=-1)
-        picked_channel=pred.argmax(dim=-1)
+        print(iou2)
+        # pred=torch.squeeze(y_hat)
+        # pred=pred.permute(1,2,0)
+        pred=torch.softmax(y_hat,dim=1)
+        picked_channel=pred.argmax(dim=1)
 
-        fig, axs = plt.subplots(1,4)
-        axs[0].imshow(picked_channel*0.5+x[0,0,...]*0.5)
-        axs[1].imshow(picked_channel)
-        axs[2].imshow(x[0,0,...])
-        axs[3].imshow(y[0,0,...])
-        axs[0].set_title('blend')
-        axs[1].set_title('result')
-        axs[2].set_title('img')
-        axs[3].set_title('ground truth')
-        plt.show()
+        # print(torch.nn.functional.softmax(y_hat, dim=1).argmax(dim=1))
+        dice=dice_score(torch.nn.functional.softmax(y_hat, dim=1),y.squeeze(1).long(),reduction='none',bg=True,no_fg_score=1)[:4]
+        print(dice)
+        for index in range(x.shape[0]):
+            fig, axs = plt.subplots(1,4)
+
+            axs[0].imshow(picked_channel[index,...]*0.5+x[index,0,...]*0.5)
+            axs[1].imshow(picked_channel[index,...])
+            axs[2].imshow(x[index,0,...])
+            axs[3].imshow(y[index,0,...])
+            axs[0].set_title('blend')
+            axs[1].set_title('result')
+            axs[2].set_title('img')
+            axs[3].set_title('ground truth')
+            plt.show()
 
         loss = self.loss.forward(y_hat, y)
         self.log('test/loss', loss)
         self.log('test/iou', iou)
+        self.log('test/iou2', iou2)
         return {'loss': loss,"iou": iou}
 
     def test_epoch_end(self, outputs):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         avg_iou = torch.stack([x['iou'] for x in outputs]).mean()
-        self.train_logger.info("Validatoin epoch {} ends, val_loss = {},iou={}".format(self.current_epoch, avg_loss,avg_iou))
+        self.train_logger.info("test epoch {} ends, val_loss = {},iou={}".format(self.current_epoch, avg_loss,avg_iou))
 
 
 

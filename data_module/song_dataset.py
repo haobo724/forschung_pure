@@ -231,7 +231,7 @@ class Song_dataset_2d_with_CacheDataloder(Song_dataset):
             dtype = (np.float32, np.float32)
         elif mode == "infer":
             xforms = xforms[:-2]
-            dtype = (np.float32,)
+            dtype = (np.float32,np.float32)
 
         if leaky == 'lung':
             xforms.extend([
