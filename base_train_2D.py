@@ -174,6 +174,7 @@ class BasetRAIN(pl.LightningModule):
         pred=pred.permute(1,2,0)
         pred=torch.softmax(pred,dim=-1)
         picked_channel=pred.argmax(dim=-1)
+
         fig, axs = plt.subplots(1,4)
         axs[0].imshow(picked_channel*0.5+x[0,0,...]*0.5)
         axs[1].imshow(picked_channel)
@@ -184,6 +185,7 @@ class BasetRAIN(pl.LightningModule):
         axs[2].set_title('img')
         axs[3].set_title('ground truth')
         plt.show()
+
         loss = self.loss.forward(y_hat, y)
         self.log('test/loss', loss)
         self.log('test/iou', iou)

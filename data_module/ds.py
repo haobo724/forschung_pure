@@ -22,6 +22,8 @@ import logging
 def leakylabel_generator(img_list, mask_list, leakylabellist,root_str):
     leakylabel_img = []
     leakylabel_mask = []
+    print("leakylabellist",leakylabellist)
+
     for index in range(len(img_list)):
         for leakylabel in leakylabellist:
         # pattern_index = img_list[index].find('_', 0)
@@ -133,6 +135,24 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
     root_str,img_list,mask_list = getdataset(data_path)
 
     patient_name,patient_num=getpatient_name(img_list)
+    print(patient_num)
+    if dataset_mode ==5:
+        print(f'[INFO] TEST Dataset_mode: {dataset_mode}')
+        fulllabeled_name_sub=[patient_name[33]]
+        Fulllabel_str_list, Fulllabel_str_list_mask = leakylabel_generator(img_list, mask_list, fulllabeled_name_sub,
+                                                                               root_str)
+        print(len(Fulllabel_str_list))
+        keys = ("image", "label", "leaky")
+        num_alllabel = len(Fulllabel_str_list)
+        test_patient = [
+            {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
+            zip(Fulllabel_str_list[350:360], Fulllabel_str_list_mask[350:360])
+        ]
+        test_ALLlabel_patient_DS = monai.data.Dataset(
+            data=test_patient,
+            transform=get_xform(mode='val', leaky='all'),
+        )
+        return test_ALLlabel_patient_DS, [], []
 
     if dataset_mode ==1 or dataset_mode==2:
         print(f'[INFO] Dataset_mode: {dataset_mode}')
@@ -220,6 +240,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
         train_NoLiver_patient_DS = monai.data.Dataset(
             data=NoLiver_patient,
             transform=train_transform__NoLiver,
+
 
         )
     

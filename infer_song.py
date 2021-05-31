@@ -7,6 +7,7 @@ import pytorch_lightning as pl
 from song_dataset import Song_dataset_2d_with_CacheDataloder
 import helpers
 import glob
+from ds import climain
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 sys.path.append(os.path.dirname(__file__))
@@ -22,21 +23,23 @@ def infer(models, raw_dir):
     parser.add_argument('--datasetmode',type=int, required=True,help='4 mode',default=1)
     args = parser.parse_args()
 
-    images = sorted(glob.glob(os.path.join(raw_dir, '*_ct.nii.gz')))
-    labels = sorted(glob.glob(os.path.join(raw_dir, '*_seg.nii.gz')))
-    assert len(images) == len(labels)
-    keys = ("image", "label")
+    # images = sorted(glob.glob(os.path.join(raw_dir, '*_ct.nii.gz')))
+    # labels = sorted(glob.glob(os.path.join(raw_dir, '*_seg.nii.gz')))
+    # assert len(images) == len(labels)
+    # keys = ("image", "label")
+    #
+    # val_imgs = [
+    #     {keys[0]: img, keys[1]: seg} for img, seg in
+    #     zip(images[350:360], labels[350:360])
+    # ]
+    # infer_xform = Song_dataset_2d_with_CacheDataloder.get_xform(mode="val")
+    # infer_ds = monai.data.CacheDataset(data=val_imgs, transform=infer_xform)
 
-    val_imgs = [
-        {keys[0]: img, keys[1]: seg} for img, seg in
-        zip(images[350:360], labels[350:360])
-    ]
-    infer_xform = Song_dataset_2d_with_CacheDataloder.get_xform(mode="val")
-    infer_ds = monai.data.CacheDataset(data=val_imgs, transform=infer_xform)
+    infer_ds,_,_=climain(args.data_folder[0],Input_worker=4,mode='val',dataset_mode=5)
     infer_loader = monai.data.DataLoader(
         infer_ds,
         batch_size=1,
-        num_workers=2
+        num_workers=4
     )
     model = benchmark_unet_2d.load_from_checkpoint(models,hparams=vars(args))
     trainer=pl.Trainer()

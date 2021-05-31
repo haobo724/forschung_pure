@@ -298,6 +298,7 @@ class Song_dataset_2d_with_CacheDataloder(Song_dataset):
             num_workers=self.worker,
             pin_memory=torch.cuda.is_available(),
             collate_fn=list_data_collate
+
         )
         return train_loader
 
