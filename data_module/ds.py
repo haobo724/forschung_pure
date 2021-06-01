@@ -169,7 +169,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
                 zip(Fulllabel_str_list[:int(num_alllabel * 0.8)], Fulllabel_str_list_mask[:int(num_alllabel * 0.8)])
             ]
             train_ALLlabel_patient_DS = monai.data.Dataset(
-                data=Alllabel_patient_train,
+                data=Alllabel_patient_train[:10],
                 transform=get_xform(mode=mode, leaky='all'),
             )
             return train_ALLlabel_patient_DS,[],[]
@@ -179,7 +179,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
                 zip(Fulllabel_str_list[int(num_alllabel * 0.8):], Fulllabel_str_list_mask[int(num_alllabel * 0.8):])
             ]
             val_ALLlabel_patient_DS = monai.data.Dataset(
-                data=Alllabel_patient_val,
+                data=Alllabel_patient_val[:10],
                 transform=get_xform(mode=mode, leaky='all'),
             )
             return val_ALLlabel_patient_DS,[],[]
