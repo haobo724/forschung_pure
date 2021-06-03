@@ -284,8 +284,10 @@ class Song_dataset_2d_with_CacheDataloder(Song_dataset):
         if self.mode==1 or self.mode==2:
             self.train_ds=train_ds_alllabel
             self.val_ds=val_ds_alllabel
+        elif self.mode==6:
+            self.val_ds =   val_Nolung_patient_DS + val_NoLiver_patient_DS
+            self.train_ds =   train_Nolung_patient_DS + train_NoLiver_patient_DS
         else:
-
             self.val_ds=val_ds_alllabel+val_Nolung_patient_DS+val_NoLiver_patient_DS
             self.train_ds = train_ds_alllabel+train_Nolung_patient_DS+ train_NoLiver_patient_DS
 

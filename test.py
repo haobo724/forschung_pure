@@ -1,10 +1,10 @@
+import numpy as np
 import torch
 import torchmetrics.functional as f
 
-c=torch.randint(0,10,(3,4)).float()
+c=np.array([1,1,2,2,3])
 print(c)
-avg_precision = torch.mean(torch.stack([x for x in c]),dim=0)
-print(avg_precision)
+cord_zusatz = np.argwhere(c== 2 )
+print(cord_zusatz)
 
-print(c.size())
 

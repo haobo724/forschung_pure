@@ -22,7 +22,7 @@ class BasetRAIN(pl.LightningModule):
         self.validation_precision = pl.metrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_IOU = pl.metrics.IoU( num_classes=4,absent_score=True)
         self.validation_IOU2 = pl.metrics.IoU( num_classes=4,absent_score=True,reduction='none')
-        if self.hparamss['datasetmode']==4 :
+        if self.hparamss['datasetmode']== 4 :
             self.modifiy_label_ON=True
             print(f'[INFO] modifiy_label_ON={self.modifiy_label_ON}')
         else:
@@ -39,6 +39,11 @@ class BasetRAIN(pl.LightningModule):
         z_bactch =batch["leaky"]
         y_hat = self(x)
         y_copy = y.clone()
+        # for idx,yc in enumerate(y_copy):
+        #     print(y_copy.size())
+        #     plt.imshow(y_copy[idx, 0, ...].cpu().numpy())
+        #     plt.title(f"{idx} at training")
+        #     plt.show()
         if self.modifiy_label_ON:
             for idx,z in enumerate(z_bactch):
                 if z != 0:
@@ -92,6 +97,7 @@ class BasetRAIN(pl.LightningModule):
                     predc = pred.permute(0, 2, 3, 1)
                     predc = torch.softmax(predc[idx, ...], dim=-1)
                     picked_channel = predc[idx, ...].argmax(dim=-1)
+
                     cords = np.argwhere(picked_channel.cpu().numpy() == z)
                     realcord = []
                     for cord in cords:
@@ -100,7 +106,7 @@ class BasetRAIN(pl.LightningModule):
 
                     for cord in realcord:
                         y_copy[idx, 0, cord[0], cord[1]] = z
-                    # todo:如果是肺，右肺（label=3）再来一遍
+                    # todo:如果是肺(label=2，左肺)，右肺（label=3）再来一遍
                     if z == 2:
                         cord_zusatz = np.argwhere(picked_channel.cpu().numpy() == z + 1)
                         realcord = []

@@ -28,6 +28,12 @@ class Transposed(BaseTransform):
         return data
 
 class Leakylabel(BaseTransform):
+    '''
+    如果leaky是liver那么附加通道给的tag就是1
+    如果leaky是lung那么附加通道给的tag就是2
+
+
+    '''
     def __init__(self,keys: list, leakylist, leaky):
         super().__init__(keys)
         self.leakylist=leakylist
