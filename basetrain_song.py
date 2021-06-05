@@ -3,7 +3,6 @@ import sys
 import torch
 import logging
 import pytorch_lightning as pl
-import shutil
 
 # Model import
 from models.BasicUnet import BasicUnet
@@ -18,7 +17,7 @@ import helpers as helpers
 from pytorch_lightning.callbacks import ModelCheckpoint
 
 from base_train_2D import BasetRAIN
-
+from pytorch_lightning.loggers import TensorBoardLogger
 torch.multiprocessing.set_sharing_strategy('file_system')
 sys.path.append(os.path.dirname(__file__))
 
@@ -69,21 +68,27 @@ def cli_main():
         monitor='valid/loss',
         save_top_k=2,
         mode='min',
-        filename='{epoch:02d}-{avg_iou_individual:02f}'
+        save_last=True,
+        filename='{epoch:02d}-{avg_iou_individual_liver:.02f}'
     )
+    if not os.path.exists(os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}')):
+        os.makedirs(os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}'))
+
+    logger = TensorBoardLogger(save_dir=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}'), name='my_model')
 
     # create trainer using pytorch_lightning
-    trainer = pl.Trainer.from_argparse_args(args, callbacks=[ckpt_callback],num_sanity_val_steps=0)
-
+    trainer = pl.Trainer.from_argparse_args(args, callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger)
     # make the direcrory for the checkpoints
-    if not os.path.exists(os.path.join('.', 'lightning_logs', f'version_{trainer.logger.version}_mode{args.datasetmode}')):
-        os.makedirs(os.path.join('.', 'lightning_logs', f'version_{trainer.logger.version}_mode{args.datasetmode}'))
+    if not os.path.exists(os.path.join(trainer.logger.save_dir,'my_model',f'version_{trainer.logger.version}')
+                                               ):
+        os.makedirs(os.path.join(trainer.logger.save_dir,'my_model',f'version_{trainer.logger.version}'))
 
-    # configuration of event log
-    helpers.logging_init(log_fname=os.path.join('.', 'lightning_logs',
-                                                f'version_{trainer.logger.version}_mode{args.datasetmode}',
+    # # configuration of event log
+    helpers.logging_init(log_fname= os.path.join(trainer.logger.save_dir,'my_model',f'version_{trainer.logger.version}',
                                                 f'{fname}.log'),
-                         log_lvl=logging.INFO)
+                         log_lvl=logging.INFO
+                         )
+
     logging.info(f'Manual logging starts. Model version: {trainer.logger.version}_mode{args.datasetmode}')
 
     # configure data module
@@ -101,30 +106,10 @@ def cli_main():
 
     # training
     trainer.fit(net, dm)
-    trainer.save_checkpoint(
-        os.path.join('.', 'lightning_logs', f'version_{trainer.logger.version}_mode{args.datasetmode}', 'final.ckpt'))
+
     logging.info("!!!!!!!!!!!!!!This is the end of the training!!!!!!!!!!!!!!!!!!!!!!")
     print('THE END')
 
-
-
-
-def model_debug():
-    parser = ArgumentParser()
-    parser = helpers.add_training_args(parser)
-    parser = pl.Trainer.add_argparse_args(parser)
-    parser = benchmark_unet_2d.add_model_specific_args(parser)
-    args = parser.parse_args()
-
-    # log configures
-
-    net = benchmark_unet_2d(hparams=vars(args))
-    dummy_x = torch.rand(2, 1, 512, 512).cuda()
-    dummy_pred = net(dummy_x)
-    print(dummy_pred.shape)
-
-    dummy_y = torch.randint(0, 12, (2, 1, 512, 512)).cuda()
-    print('dummmy loss:', net.loss.forward(dummy_pred, dummy_y))
 
 
 if __name__ == "__main__":

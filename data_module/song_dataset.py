@@ -2,7 +2,6 @@
 
 import data_module.custom_transform as custom_transform
 import os
-os.environ["KMP_DUPLICATE_LIB_OK"]="TRUE"
 import pytorch_lightning as pl
 import logging
 import monai.transforms as mxform
@@ -13,7 +12,6 @@ from torch.utils.data import DataLoader
 import torch
 import glob
 from abc import abstractmethod
-import matplotlib.pyplot as plt
 from ds import climain
 '''
 Some information about the date:
@@ -49,29 +47,7 @@ class Song_dataset(pl.LightningDataModule):
         # select mode
         self.mode=mode
     def setup(self, stage: str = None):
-        self.keys = ("image", "label")
-        # if stage == 'train':
-        # n_train = int(len(self.images) * 0.8)
-        # n_train = len(self.images)
-        n_train_small = int(len(self.images) * 0.05)
-        n_val = int(0.2 * n_train_small)
-
-        # val should be at least one
-        if n_val == 0:
-            n_val += 1
-            n_train_small -= 1
-
-        # Log the basics of the dataset.
-        self.tlogger.info(f"Number of training dataset: {n_train_small - n_val}")
-        self.tlogger.info(f"Number of validation dataset: {n_val}")
-        self.train_imgs = [
-            {self.keys[0]: img, self.keys[1]: seg} for img, seg in
-            zip(self.images[:n_train_small - n_val], self.labels[:n_train_small - n_val])
-        ]
-        self.val_imgs = [
-            {self.keys[0]: img, self.keys[1]: seg} for img, seg in
-            zip(self.images[n_train_small - n_val:n_train_small], self.labels[n_train_small - n_val:n_train_small])
-        ]
+        pass
 
 
     @staticmethod
@@ -281,12 +257,9 @@ class Song_dataset_2d_with_CacheDataloder(Song_dataset):
                                                                                        Input_worker=self.worker,
                                                                                        mode='val',
                                                                                        dataset_mode=self.mode)
-        if self.mode==1 or self.mode==2:
+        if self.mode==1 or self.mode==2 :
             self.train_ds=train_ds_alllabel
             self.val_ds=val_ds_alllabel
-        elif self.mode==6:
-            self.val_ds =   val_Nolung_patient_DS + val_NoLiver_patient_DS
-            self.train_ds =   train_Nolung_patient_DS + train_NoLiver_patient_DS
         else:
             self.val_ds=val_ds_alllabel+val_Nolung_patient_DS+val_NoLiver_patient_DS
             self.train_ds = train_ds_alllabel+train_Nolung_patient_DS+ train_NoLiver_patient_DS

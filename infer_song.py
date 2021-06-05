@@ -4,10 +4,10 @@ import torch
 import monai
 from argparse import ArgumentParser
 import pytorch_lightning as pl
-from song_dataset import Song_dataset_2d_with_CacheDataloder
 import helpers
 import glob
 from ds import climain
+from pytorch_lightning.loggers import TensorBoardLogger
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 sys.path.append(os.path.dirname(__file__))
@@ -22,6 +22,7 @@ def infer(models, raw_dir):
     parser = pl.Trainer.add_argparse_args(parser)
     parser.add_argument('--datasetmode',type=int, required=True,help='4 mode',default=1)
     args = parser.parse_args()
+    logger = TensorBoardLogger(save_dir=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}'), name='my_test')
 
     # images = sorted(glob.glob(os.path.join(raw_dir, '*_ct.nii.gz')))
     # labels = sorted(glob.glob(os.path.join(raw_dir, '*_seg.nii.gz')))
@@ -38,11 +39,11 @@ def infer(models, raw_dir):
     infer_ds,_,_=climain(args.data_folder[0],Input_worker=4,mode='test',dataset_mode=5)
     infer_loader = monai.data.DataLoader(
         infer_ds,
-        batch_size=2,
-        num_workers=4
+        batch_size=1,
+        num_workers=8
     )
     model = benchmark_unet_2d.load_from_checkpoint(models,hparams=vars(args))
-    trainer=pl.Trainer()
+    trainer=pl.Trainer(logger=logger)
     trainer.test(model,infer_loader)
 
 if __name__ == "__main__":
