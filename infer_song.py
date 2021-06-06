@@ -39,7 +39,7 @@ def infer(models, raw_dir):
     infer_ds,_,_=climain(args.data_folder[0],Input_worker=4,mode='test',dataset_mode=5)
     infer_loader = monai.data.DataLoader(
         infer_ds,
-        batch_size=1,
+        batch_size=4,
         num_workers=8
     )
     model = benchmark_unet_2d.load_from_checkpoint(models,hparams=vars(args))
