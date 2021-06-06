@@ -132,7 +132,7 @@ class BasetRAIN(pl.LightningModule):
         for index in range(picked_channel.shape[0]):
             iou_individual += self.validation_IOU2(picked_channel[index, ...], y[index, ...].long()).float()
             precision += self.validation_precision(picked_channel[index, ...], y[index, ...].long())
-            dice_individual += self.dice_score(picked_channel[index, ...], y[index, ...].squeeze(1).long(),reduction='none',bg=True,no_fg_score=1)[:4].float()
+            dice_individual += dice_score(picked_channel[index, ...], y[index, ...].squeeze(1).long(),reduction='none',bg=True,no_fg_score=1)[:4].float()
             recall += self.validation_recall(picked_channel[index, ...], y[index, ...].long())
         iou_individual /= picked_channel.shape[0]
         precision /= picked_channel.shape[0]
@@ -240,7 +240,7 @@ class BasetRAIN(pl.LightningModule):
 
 
         # dice=dice_score(torch.softmax(y_hat, dim=1),y.squeeze(1).long(),reduction='none',bg=True,no_fg_score=1)[:4]
-        show=0
+        show=1
         if show:
             for index in range(x.shape[0]):
                 fig, axs = plt.subplots(1,4)
