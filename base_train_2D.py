@@ -127,10 +127,10 @@ class BasetRAIN(pl.LightningModule):
         # argmax
         pred=torch.softmax(pred,dim=1)
         picked_channel=pred.argmax(dim=1)
-        iou_individual = 0
-        recall = 0
-        precision = 0
-        dice_individual = 0
+        iou_individual = []
+        recall = []
+        precision = []
+        dice_individual = []
         for index in range(picked_channel.shape[0]):
             iou_individual += self.validation_IOU2(picked_channel[index, ...], y[index, ...].long()).float()
             precision += self.validation_precision(picked_channel[index, ...], y[index, ...].long())
@@ -235,7 +235,7 @@ class BasetRAIN(pl.LightningModule):
 
         pred=torch.softmax(y_hat,dim=1)
         picked_channel=pred.argmax(dim=1)
-        iou_individual=0
+        iou_individual=[]
         for index in range(picked_channel.shape[0]):
             iou_individual += self.validation_IOU2(picked_channel[index,...], y[index,...].long())
         iou_individual /=picked_channel.shape[0]
