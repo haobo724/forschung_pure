@@ -16,16 +16,17 @@ class BasetRAIN(pl.LightningModule):
         super().__init__()
         self.model = None
         self.loss = None
-        self.hparams = hparams
-        self.lr=self.hparams['lr']
-        self.batch_size=self.hparams['batch_size']
+        self.hparams.update(hparams)
+
+        self.lr=hparams['lr']
+        self.batch_size=hparams['batch_size']
 
         self.train_logger = logging.getLogger(__name__)
         self.validation_recall = pl.metrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_precision = pl.metrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_IOU = pl.metrics.IoU( num_classes=4,absent_score=True)
         self.validation_IOU2 = pl.metrics.IoU( num_classes=4,absent_score=1,reduction='none')
-        if self.hparams['datasetmode']== 4 :
+        if hparams['datasetmode']== 4 :
             self.modifiy_label_ON=True
             print(f'[INFO] modifiy_label_ON={self.modifiy_label_ON}')
         else:
@@ -122,15 +123,15 @@ class BasetRAIN(pl.LightningModule):
                             y_copy[idx, 0, cord[0], cord[1]] = z + 1
                 #
 
-        loss = self.loss.forward(pred, y_copy).cpu()
+        loss = self.loss.forward(pred, y_copy)
 
         # argmax
         pred=torch.softmax(pred,dim=1)
         picked_channel=pred.argmax(dim=1)
-        iou_individual = []
-        recall = []
-        precision = []
-        dice_individual = []
+        iou_individual = 0
+        recall = 0
+        precision = 0
+        dice_individual = 0
         for index in range(picked_channel.shape[0]):
             iou_individual += self.validation_IOU2(picked_channel[index, ...], y[index, ...].long()).float()
             precision += self.validation_precision(picked_channel[index, ...], y[index, ...].long())
@@ -222,25 +223,22 @@ class BasetRAIN(pl.LightningModule):
 
     def configure_optimizers(self):
         if self.hparams['opt']=='Adam':
-            print('[INFO] Adam will be used')
+            print(f'[INFO] Adam will be used ,lr = {self.lr}')
             return torch.optim.Adam(self.parameters(), lr=self.lr)
         else:
-            print('[INFO] SGD will be used')
+            print(f'[INFO] SGD will be used ,lr = {self.lr}')
             return torch.optim.SGD(self.parameters(), lr=self.lr)
 
     def test_step(self, batch, batch_idx, dataset_idx=None):
         x, y = batch['image'], batch['label']
         y_hat = self(x)
-        # iou = self.validation_IOU(torch.softmax(y_hat, dim=1), y.long())
 
         pred=torch.softmax(y_hat,dim=1)
         picked_channel=pred.argmax(dim=1)
         iou_individual=[]
         for index in range(picked_channel.shape[0]):
             iou_individual += self.validation_IOU2(picked_channel[index,...], y[index,...].long())
-        iou_individual /=picked_channel.shape[0]
-
-
+        iou_individual=[x/picked_channel.shape[0] for x in iou_individual]
 
         # dice=dice_score(torch.softmax(y_hat, dim=1),y.squeeze(1).long(),reduction='none',bg=True,no_fg_score=1)[:4]
         show=0

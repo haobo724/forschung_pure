@@ -33,6 +33,7 @@ class benchmark_unet_2d(BasetRAIN):
         weights = [0.5, 1.0, 3.0, 5.0]
 
         self.loss = CELoss(weight=weights)
+        # self.hparams = hparams
 
         self.save_hyperparameters()
 
@@ -59,6 +60,7 @@ def cli_main():
     parser.add_argument('--opt',type=str, required=True,help='2 optimizers',default='Adam')
     args = parser.parse_args()
 
+
     # create the pipeline
     net = benchmark_unet_2d(hparams=vars(args))
 
@@ -67,7 +69,7 @@ def cli_main():
         monitor='valid/loss',
         save_top_k=2,
         mode='min',
-        save_last=True,
+        # save_last=True,
         filename='{epoch:02d}-{avg_iou_individual_liver:.02f}'
     )
     if not os.path.exists(os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}')):
@@ -77,7 +79,6 @@ def cli_main():
 
     # create trainer using pytorch_lightning
     trainer = pl.Trainer.from_argparse_args(args, auto_lr_find=True,callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger)
-    # trainer = pl.Trainer(auto_lr_find=True,gpus=-1)
     # make the direcrory for the checkpoints
     if not os.path.exists(os.path.join(trainer.logger.save_dir,'my_model',f'version_{trainer.logger.version}')
                                                ):
@@ -94,26 +95,21 @@ def cli_main():
     # configure data module
     logging.info(f'dataset from {args.data_folder}')
 
-
-
-
     dm = Song_dataset_2d_with_CacheDataloder(args.data_folder[0],
                                  worker=args.worker,
                                  batch_size=args.batch_size,
                                  mode=args.datasetmode)
 
-    # dm.setup(stage='fit')
+    dm.setup(stage='fit')
 
     # training
-    # trainer.fit(net, dm)
-    # trainer.tune(model=net,datamodule=dm)
 
     lr =trainer.tuner.lr_find(datamodule=dm,model=net)
-    # fig=lr.plot(suggest=True)
-    # fig.show()
+    # # fig=lr.plot(suggest=True)
+    # # fig.show()
     net.lr=lr.suggestion()
-    print('best initial lr:',net.hparams['lr'])
-    trainer.fit(datamodule=dm,model=net)
+    print('best initial lr:',net.lr)
+    trainer.fit(model=net,train_dataloader=dm.train_dataloader(),val_dataloaders=dm.val_dataloader())
 
     logging.info("!!!!!!!!!!!!!!This is the end of the training!!!!!!!!!!!!!!!!!!!!!!")
     print('THE END')
