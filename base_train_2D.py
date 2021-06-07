@@ -16,13 +16,16 @@ class BasetRAIN(pl.LightningModule):
         super().__init__()
         self.model = None
         self.loss = None
-        self.hparamss = hparams
+        self.hparams = hparams
+        self.lr=self.hparams['lr']
+        self.batch_size=self.hparams['batch_size']
+
         self.train_logger = logging.getLogger(__name__)
         self.validation_recall = pl.metrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_precision = pl.metrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_IOU = pl.metrics.IoU( num_classes=4,absent_score=True)
         self.validation_IOU2 = pl.metrics.IoU( num_classes=4,absent_score=1,reduction='none')
-        if self.hparamss['datasetmode']== 4 :
+        if self.hparams['datasetmode']== 4 :
             self.modifiy_label_ON=True
             print(f'[INFO] modifiy_label_ON={self.modifiy_label_ON}')
         else:
@@ -37,7 +40,6 @@ class BasetRAIN(pl.LightningModule):
     def training_step(self, batch, batch_idx, dataset_idx=None):
         x, y = batch["image"], batch["label"]
         z_bactch =batch["leaky"]
-
 
         y_hat = self(x)
         y_copy = y.clone()
@@ -147,12 +149,13 @@ class BasetRAIN(pl.LightningModule):
         # dice_individual=dice_score(torch.softmax(pred, dim=1),y.squeeze(1).long(),reduction='none',bg=True,no_fg_score=1)[:4].float()
 
 
-        self.log("recall", loss, on_step=False,on_epoch=True,prog_bar=True,logger=True)
-        self.log("precision", precision, on_step=False,on_epoch=True,prog_bar=True,logger=True)
-        self.log("iou_individual_bg", iou_individual[0], on_step=False,on_epoch=True,prog_bar=True,logger=True)
-        self.log("iou_individual_liver", iou_individual[1], on_step=False,on_epoch=True,prog_bar=True,logger=True)
-        self.log("iou_individual_left_lung", iou_individual[2], on_step=False,on_epoch=True,prog_bar=True,logger=True)
-        self.log("iou_individual_right_lung", iou_individual[3], on_step=False,on_epoch=True,prog_bar=True,logger=True)
+        # self.log("loss", loss, on_step=False,on_epoch=True,prog_bar=True,logger=True)
+        # self.log("recall", loss, on_step=False,on_epoch=True,prog_bar=True,logger=True)
+        # self.log("precision", precision, on_step=False,on_epoch=True,prog_bar=True,logger=True)
+        # self.log("iou_individual_bg", iou_individual[0], on_step=False,on_epoch=True,prog_bar=True,logger=True)
+        # self.log("iou_individual_liver", iou_individual[1], on_step=False,on_epoch=True,prog_bar=True,logger=True)
+        # self.log("iou_individual_left_lung", iou_individual[2], on_step=False,on_epoch=True,prog_bar=True,logger=True)
+        # self.log("iou_individual_right_lung", iou_individual[3], on_step=False,on_epoch=True,prog_bar=True,logger=True)
 
         # pred = torch.argmax(pred, dim=1).unsqueeze(1)
         # if batch_idx == 0:
@@ -218,12 +221,12 @@ class BasetRAIN(pl.LightningModule):
         self.log('valid/avg_dice_individual_right_lung', avg_dice_individual_right_lung,logger=True)
 
     def configure_optimizers(self):
-        if self.hparamss['opt']=='Adam':
+        if self.hparams['opt']=='Adam':
             print('[INFO] Adam will be used')
-            return torch.optim.Adam(self.parameters(), lr=self.hparamss['lr'])
+            return torch.optim.Adam(self.parameters(), lr=self.lr)
         else:
             print('[INFO] SGD will be used')
-            return torch.optim.SGD(self.parameters(), lr=self.hparamss['lr'])
+            return torch.optim.SGD(self.parameters(), lr=self.lr)
 
     def test_step(self, batch, batch_idx, dataset_idx=None):
         x, y = batch['image'], batch['label']
@@ -236,11 +239,11 @@ class BasetRAIN(pl.LightningModule):
         for index in range(picked_channel.shape[0]):
             iou_individual += self.validation_IOU2(picked_channel[index,...], y[index,...].long())
         iou_individual /=picked_channel.shape[0]
-        print("iou:",iou_individual)
+
 
 
         # dice=dice_score(torch.softmax(y_hat, dim=1),y.squeeze(1).long(),reduction='none',bg=True,no_fg_score=1)[:4]
-        show=1
+        show=0
         if show:
             for index in range(x.shape[0]):
                 fig, axs = plt.subplots(1,4)

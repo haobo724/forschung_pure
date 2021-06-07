@@ -34,7 +34,6 @@ class benchmark_unet_2d(BasetRAIN):
 
         self.loss = CELoss(weight=weights)
 
-        self.hparamss = hparams
         self.save_hyperparameters()
 
     @staticmethod
@@ -77,7 +76,8 @@ def cli_main():
     logger = TensorBoardLogger(save_dir=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}'), name='my_model')
 
     # create trainer using pytorch_lightning
-    trainer = pl.Trainer.from_argparse_args(args, callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger)
+    trainer = pl.Trainer.from_argparse_args(args, auto_lr_find=True,callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger)
+    # trainer = pl.Trainer(auto_lr_find=True,gpus=-1)
     # make the direcrory for the checkpoints
     if not os.path.exists(os.path.join(trainer.logger.save_dir,'my_model',f'version_{trainer.logger.version}')
                                                ):
@@ -102,10 +102,18 @@ def cli_main():
                                  batch_size=args.batch_size,
                                  mode=args.datasetmode)
 
-    dm.setup(stage='fit')
+    # dm.setup(stage='fit')
 
     # training
-    trainer.fit(net, dm)
+    # trainer.fit(net, dm)
+    # trainer.tune(model=net,datamodule=dm)
+
+    lr =trainer.tuner.lr_find(datamodule=dm,model=net)
+    # fig=lr.plot(suggest=True)
+    # fig.show()
+    net.lr=lr.suggestion()
+    print('best initial lr:',net.hparams['lr'])
+    trainer.fit(datamodule=dm,model=net)
 
     logging.info("!!!!!!!!!!!!!!This is the end of the training!!!!!!!!!!!!!!!!!!!!!!")
     print('THE END')

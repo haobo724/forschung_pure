@@ -21,6 +21,7 @@ def infer(models, raw_dir):
     parser = helpers.add_training_args(parser)
     parser = pl.Trainer.add_argparse_args(parser)
     parser.add_argument('--datasetmode',type=int, required=True,help='4 mode',default=1)
+    parser = benchmark_unet_2d.add_model_specific_args(parser)
     args = parser.parse_args()
     logger = TensorBoardLogger(save_dir=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}'), name='my_test')
 
@@ -39,11 +40,11 @@ def infer(models, raw_dir):
     infer_ds,_,_=climain(args.data_folder[0],Input_worker=4,mode='test',dataset_mode=5)
     infer_loader = monai.data.DataLoader(
         infer_ds,
-        batch_size=4,
+        batch_size=8,
         num_workers=8
     )
     model = benchmark_unet_2d.load_from_checkpoint(models,hparams=vars(args))
-    trainer=pl.Trainer(logger=logger)
+    trainer=pl.Trainer(gpus=-1,logger=logger)
     trainer.test(model,infer_loader)
 
 if __name__ == "__main__":

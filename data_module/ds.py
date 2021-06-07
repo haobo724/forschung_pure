@@ -94,6 +94,7 @@ def get_xform(mode="train", keys=("image", "label","leaky"),leaky=None,leakylist
         # # mxform.Spacingd(keys, pixdim=[0.89, 0.89, 1.5], mode=("bilinear", "nearest"))
         # # mxform.Resized(keys, spatial_size=(256,256), mode='nearest')
         mxform.SpatialPadd(keys[:2], spatial_size=(512, 512), mode="reflect"),
+
         mxform.CenterSpatialCropd(keys[:2], roi_size=[512, 512]),
     ]
     if mode == "train":
@@ -115,7 +116,7 @@ def get_xform(mode="train", keys=("image", "label","leaky"),leaky=None,leakylist
     elif mode == "val":
         dtype = (np.float32, np.float32)
     elif mode == "test":
-        xforms = xforms[:-2]
+        # xforms = xforms[:-2]
         dtype = (np.float32,np.float32)
 
     if leaky =='liver':
@@ -339,15 +340,17 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
 
     if dataset_mode ==5:
         print(f'[INFO] TEST Dataset_mode: {dataset_mode}')
-        fulllabeled_name_sub=[patient_name[31]]
+        fulllabeled_name_sub=patient_name[32:34]
+        if len(fulllabeled_name_sub)==1:
+            fulllabeled_name_sub=[fulllabeled_name_sub]
         Fulllabel_str_list, Fulllabel_str_list_mask = leakylabel_generator(img_list, mask_list, fulllabeled_name_sub,
                                                                                root_str)
         keys = ("image", "label", "leaky")
         num_alllabel = len(Fulllabel_str_list)
         test_patient = [
             {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-            zip(Fulllabel_str_list[446:448]+Fulllabel_str_list[150:152], Fulllabel_str_list_mask[446:448]+Fulllabel_str_list_mask[150:152])
-            # zip(Fulllabel_str_list, Fulllabel_str_list_mask)
+            # zip(Fulllabel_str_list[446:448]+Fulllabel_str_list[150:152], Fulllabel_str_list_mask[446:448]+Fulllabel_str_list_mask[150:152])
+            zip(Fulllabel_str_list, Fulllabel_str_list_mask)
         ]
         test_ALLlabel_patient_DS = monai.data.Dataset(
             data=test_patient,

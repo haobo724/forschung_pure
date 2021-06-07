@@ -27,98 +27,17 @@ label_list = ['bg', 'liver', 'left_lung', 'right_lung']
 
 # Base class of Visceral_dataset_2d/3d
 # @pl.data_loader
-#Todo:基类同visceral
-class Song_dataset(pl.LightningDataModule):
+class Song_dataset_2d_with_CacheDataloder(pl.LightningDataModule):
     def __init__(self, data_folder, worker, batch_size,mode, **kwargs):
         super().__init__()
-
-        # Get list of paths to all image and labels
-        self.images, self.labels = self.get_image_and_label_path(data_folder)
-        self.datafolder=data_folder
-
-        # Configure logger
-        self.tlogger = logging.getLogger(__name__)
-        self.tlogger.info(f"Data folder: {data_folder}")
-
-        # Save args
-        self.worker = worker
-        self.batch_size = batch_size
-
-        # select mode
-        self.mode=mode
-    def setup(self, stage: str = None):
-        pass
-
-
-    @staticmethod
-    @abstractmethod
-    def get_image_and_label_path(data_folder):
-        pass
-
-    @staticmethod
-    @abstractmethod
-    def get_xform(mode="train", keys=("image", "label")):
-        pass
-
-    def train_dataloader(self, cache=True):
-        train_transform = self.get_xform(mode="train")
-
-        cache_dir = None
-        if cache:
-            cache_dir = self.cache_dir
-
-        train_ds = monai.data.PersistentDataset(
-            data=self.train_imgs,
-            transform=train_transform,
-            cache_dir=cache_dir
-        )
-        print(type(train_ds))
-
-        train_loader = DataLoader(
-            train_ds,
-            shuffle=True,
-            batch_size=self.batch_size,
-            num_workers=self.worker,
-            pin_memory=torch.cuda.is_available(),
-            collate_fn=list_data_collate
-        )
-
-        return train_loader
-
-    def val_dataloader(self, cache=True):
-        val_transform = self.get_xform(mode="val")
-        cache_dir = None
-        if cache:
-            cache_dir = self.cache_dir
-
-        val_ds = monai.data.PersistentDataset(
-            data=self.val_imgs,
-            transform=val_transform,
-            cache_dir=cache_dir
-        )
-        val_loader = DataLoader(
-            dataset=val_ds,
-            batch_size=1,
-            num_workers=self.worker,
-            pin_memory=False,
-            collate_fn=list_data_collate
-        )
-        return val_loader
-
-
-
-class Song_dataset_2d_with_CacheDataloder(Song_dataset):
-    def __init__(self, data_folder, worker, batch_size,mode, **kwargs):
-        super().__init__(data_folder, worker, batch_size,mode, **kwargs)
         self.cache_dir = None
         self.train_ds=None
         self.val_ds=None
-    @staticmethod
-    def get_image_and_label_path(data_folder):
-        images = sorted(glob.glob(os.path.join(data_folder, '*_ct.nii.gz')))
-        labels = sorted(glob.glob(os.path.join(data_folder, '*_seg.nii.gz')))
-        assert len(images) == len(labels)
-        return images, labels
+        self.worker = worker
+        self.datafolder=data_folder
+
+        self.batch_size=batch_size
+        self.mode=mode
 
     @staticmethod
     def get_xform(mode="train", keys=("image", "label", "leaky"), leaky=None, leakylist=None):
