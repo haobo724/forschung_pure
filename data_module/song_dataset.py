@@ -117,7 +117,7 @@ class Song_dataset_2d_with_CacheDataloder(pl.LightningDataModule):
                                                                                        mode='val',
                                                                                        dataset_mode=self.mode)
         #todo: all fully  1 2
-        if self.mode==1 or self.mode==2 :
+        if self.mode==1 or self.mode==2 or self.mode==6:
             self.train_ds=train_ds_alllabel
             self.val_ds=val_ds_alllabel
         #todo: only leaky 7

@@ -20,6 +20,7 @@ class BasetRAIN(pl.LightningModule):
 
         self.lr=hparams['lr']
         self.batch_size=hparams['batch_size']
+        self.opt=hparams['opt']
 
         self.train_logger = logging.getLogger(__name__)
         self.validation_recall = pl.metrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
@@ -222,7 +223,7 @@ class BasetRAIN(pl.LightningModule):
         self.log('valid/avg_dice_individual_right_lung', avg_dice_individual_right_lung,logger=True)
 
     def configure_optimizers(self):
-        if self.hparams['opt']=='Adam':
+        if self.opt=='Adam':
             print(f'[INFO] Adam will be used ,lr = {self.lr}')
             return torch.optim.Adam(self.parameters(), lr=self.lr)
         else:
@@ -241,15 +242,15 @@ class BasetRAIN(pl.LightningModule):
         iou_individual=[x/picked_channel.shape[0] for x in iou_individual]
 
         # dice=dice_score(torch.softmax(y_hat, dim=1),y.squeeze(1).long(),reduction='none',bg=True,no_fg_score=1)[:4]
-        show=0
+        show=1
         if show:
             for index in range(x.shape[0]):
                 fig, axs = plt.subplots(1,4)
 
-                axs[0].imshow(picked_channel[index,...]*0.5+x[index,0,...]*0.5)
-                axs[1].imshow(picked_channel[index,...])
-                axs[2].imshow(x[index,0,...])
-                axs[3].imshow(y[index,0,...])
+                axs[0].imshow(picked_channel[index,...].cpu() *0.5+x[index,0,...].cpu() *0.5)
+                axs[1].imshow(picked_channel[index,...].cpu() )
+                axs[2].imshow(x[index,0,...].cpu() )
+                axs[3].imshow(y[index,0,...].cpu() )
                 axs[0].set_title('blend')
                 axs[1].set_title('result')
                 axs[2].set_title('img')

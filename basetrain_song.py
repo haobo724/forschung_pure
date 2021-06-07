@@ -76,9 +76,8 @@ def cli_main():
         os.makedirs(os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}'))
 
     logger = TensorBoardLogger(save_dir=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}'), name='my_model')
-
     # create trainer using pytorch_lightning
-    trainer = pl.Trainer.from_argparse_args(args, auto_lr_find=True,callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger)
+    trainer = pl.Trainer.from_argparse_args(args,precision=16,auto_lr_find=True,check_val_every_n_epoch=2,callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger)
     # make the direcrory for the checkpoints
     if not os.path.exists(os.path.join(trainer.logger.save_dir,'my_model',f'version_{trainer.logger.version}')
                                                ):
@@ -103,13 +102,14 @@ def cli_main():
     dm.setup(stage='fit')
 
     # training
+    #
+    lr =trainer.tuner.lr_find(model=net,datamodule=dm)
 
-    lr =trainer.tuner.lr_find(datamodule=dm,model=net)
     # # fig=lr.plot(suggest=True)
     # # fig.show()
     net.lr=lr.suggestion()
     print('best initial lr:',net.lr)
-    trainer.fit(model=net,train_dataloader=dm.train_dataloader(),val_dataloaders=dm.val_dataloader())
+    trainer.fit(model=net,datamodule=dm)
 
     logging.info("!!!!!!!!!!!!!!This is the end of the training!!!!!!!!!!!!!!!!!!!!!!")
     print('THE END')

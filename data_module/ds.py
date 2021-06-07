@@ -148,26 +148,24 @@ def get_xform(mode="train", keys=("image", "label","leaky"),leaky=None,leakylist
 #     "right_lung": 2,
 #     "left_lung": 3,
 
-def Train_Full_Return(Fulllabel_str_list,Nolung_str_list,NoLiver_str_list,
-                    Fulllabel_str_list_mask,Nolung_str_list_mask,NoLiver_str_list_mask,
+def Train_Full_Return(Fulllabel_str_list_T,Nolung_str_list,NoLiver_str_list,
+                    Fulllabel_str_list_mask_T,Nolung_str_list_mask,NoLiver_str_list_mask,
                     NoLung_name,NoLiver_name):
-    num_alllabel = len(Fulllabel_str_list)
-    num_Nolung = len(Nolung_str_list)
-    num_NoLiver = len(NoLiver_str_list)
+
     # TODO: 转化为dict
     keys = ("image", "label", "leaky")
     Alllabel_patient = [
         {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-        zip(Fulllabel_str_list[:int(num_alllabel * 0.8)], Fulllabel_str_list_mask[:int(num_alllabel * 0.8)])
+        zip(Fulllabel_str_list_T, Fulllabel_str_list_mask_T)
     ]
     Nolung_patient = [
         {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-        zip(Nolung_str_list[:int(num_Nolung * 0.8)], Nolung_str_list_mask[:int(num_Nolung * 0.8)])
+        zip(Nolung_str_list, Nolung_str_list_mask)
     ]
 
     NoLiver_patient = [
         {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-        zip(NoLiver_str_list[:int(num_NoLiver * 0.8)], NoLiver_str_list_mask[:int(num_NoLiver * 0.8)])
+        zip(NoLiver_str_list, NoLiver_str_list_mask)
     ]
     # Todo：三种transform
     train_transform__Nolung = get_xform(mode='train', leaky='lung', leakylist=NoLung_name)
@@ -198,7 +196,6 @@ def Val_Full_Return(Fulllabel_str_list,Nolung_str_list,NoLiver_str_list,
                     Fulllabel_str_list_mask,Nolung_str_list_mask,NoLiver_str_list_mask,
                     NoLung_name,NoLiver_name):
     keys = ("image", "label", "leaky")
-    num_alllabel = len(Fulllabel_str_list)
     num_Nolung = len(Nolung_str_list)
     num_NoLiver = len(NoLiver_str_list)
     # TODO: 转化为dict
@@ -206,16 +203,16 @@ def Val_Full_Return(Fulllabel_str_list,Nolung_str_list,NoLiver_str_list,
 
     Alllabel_patient = [
         {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-        zip(Fulllabel_str_list[int(num_alllabel * 0.8):], Fulllabel_str_list_mask[int(num_alllabel * 0.8):])
+        zip(Fulllabel_str_list, Fulllabel_str_list_mask)
     ]
     Nolung_patient = [
         {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-        zip(Nolung_str_list[int(num_Nolung * 0.8):], Nolung_str_list_mask[int(num_Nolung * 0.8):])
+        zip(Nolung_str_list, Nolung_str_list_mask)
     ]
 
     NoLiver_patient = [
         {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-        zip(NoLiver_str_list[int(num_NoLiver * 0.8):], NoLiver_str_list_mask[int(num_NoLiver * 0.8):])
+        zip(NoLiver_str_list, NoLiver_str_list_mask)
     ]
     # Todo：三种transform
     val_transform__Nolung = get_xform(mode='val', leaky='lung', leakylist=NoLung_name)
@@ -251,12 +248,12 @@ def Train_Part_Return(Nolung_str_list,NoLiver_str_list,
 
     Nolung_patient = [
         {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-        zip(Nolung_str_list[:int(num_Nolung * 0.8)], Nolung_str_list_mask[:int(num_Nolung * 0.8)])
+        zip(Nolung_str_list, Nolung_str_list_mask)
     ]
 
     NoLiver_patient = [
         {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-        zip(NoLiver_str_list[:int(num_NoLiver * 0.8)], NoLiver_str_list_mask[:int(num_NoLiver * 0.8)])
+        zip(NoLiver_str_list, NoLiver_str_list_mask)
     ]
     # Todo：三种transform
     train_transform__Nolung = get_xform(mode='train', leaky='lung', leakylist=NoLung_name)
@@ -288,12 +285,12 @@ def Val_Part_Return(Nolung_str_list,NoLiver_str_list,
 
     Nolung_patient = [
         {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-        zip(Nolung_str_list[int(num_Nolung * 0.8):], Nolung_str_list_mask[int(num_Nolung * 0.8):])
+        zip(Nolung_str_list, Nolung_str_list_mask)
     ]
 
     NoLiver_patient = [
         {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-        zip(NoLiver_str_list[int(num_NoLiver * 0.8):], NoLiver_str_list_mask[int(num_NoLiver * 0.8):])
+        zip(NoLiver_str_list, NoLiver_str_list_mask)
     ]
     # Todo：三种transform
     val_transform__Nolung = get_xform(mode='val', leaky='lung', leakylist=NoLung_name)
@@ -321,12 +318,21 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
     patient_name,patient_num=getpatient_name(img_list)
     patient_name=sorted(patient_name)
     if dataset_mode ==7:
-        NoLiver_name = patient_name[6:12]  # 10
-        NoLung_name = patient_name[
-                      12:18]  # 10
-        Nolung_str_list, Nolung_str_list_mask = leakylabel_generator(img_list, mask_list, NoLung_name, root_str)
-        NoLiver_str_list, NoLiver_str_list_mask = leakylabel_generator(img_list, mask_list, NoLiver_name, root_str)
+        NoLiver_name = patient_name[10:18]  # 10
+        NoLiver_name_V = patient_name[18:20]  # 10
+        NoLung_name = patient_name[20:28]  # 10
+        NoLung_name_V = patient_name[28:30]  # 10
+        # TODO: 根据病人名字分割出来三组list，保存的是路径
 
+        Nolung_str_list, Nolung_str_list_mask = leakylabel_generator(img_list, mask_list,
+                                                                     NoLung_name, root_str)
+        NoLiver_str_list, NoLiver_str_list_mask = leakylabel_generator(img_list, mask_list,
+                                                                       NoLiver_name, root_str)
+
+        Nolung_str_list_V, Nolung_str_list_mask_V = leakylabel_generator(img_list, mask_list,
+                                                                         NoLung_name_V, root_str)
+        NoLiver_str_list_V, NoLiver_str_list_mask_V = leakylabel_generator(img_list, mask_list,
+                                                                           NoLiver_name_V, root_str)
         if mode == 'train':
 
             return Train_Part_Return( Nolung_str_list, NoLiver_str_list,
@@ -334,23 +340,23 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
                                      NoLung_name, NoLiver_name, )
         else:
 
-            return Val_Part_Return( Nolung_str_list, NoLiver_str_list,
-                                    Nolung_str_list_mask, NoLiver_str_list_mask,
-                                   NoLung_name, NoLiver_name, )
+            return Val_Part_Return( Nolung_str_list_V, NoLiver_str_list_V,
+                                    Nolung_str_list_mask_V, NoLiver_str_list_mask_V,
+                                   NoLung_name_V, NoLiver_name_V, )
 
     if dataset_mode ==5:
         print(f'[INFO] TEST Dataset_mode: {dataset_mode}')
-        fulllabeled_name_sub=patient_name[32:34]
-        if len(fulllabeled_name_sub)==1:
-            fulllabeled_name_sub=[fulllabeled_name_sub]
-        Fulllabel_str_list, Fulllabel_str_list_mask = leakylabel_generator(img_list, mask_list, fulllabeled_name_sub,
+        fulllabeled_name_sub_T=patient_name[32:34]
+        if len(fulllabeled_name_sub_T)==1:
+            fulllabeled_name_sub_T=[fulllabeled_name_sub_T]
+        Fulllabel_str_list_T, Fulllabel_str_list_mask_T = leakylabel_generator(img_list, mask_list, fulllabeled_name_sub_T,
                                                                                root_str)
         keys = ("image", "label", "leaky")
-        num_alllabel = len(Fulllabel_str_list)
+        num_alllabel = len(Fulllabel_str_list_T)
         test_patient = [
             {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-            # zip(Fulllabel_str_list[446:448]+Fulllabel_str_list[150:152], Fulllabel_str_list_mask[446:448]+Fulllabel_str_list_mask[150:152])
-            zip(Fulllabel_str_list, Fulllabel_str_list_mask)
+            zip(Fulllabel_str_list_T[350:360]+Fulllabel_str_list_T[150:155], Fulllabel_str_list_mask_T[350:360]+Fulllabel_str_list_mask_T[150:155])
+            # zip(Fulllabel_str_list_T, Fulllabel_str_list_mask_T)
         ]
         test_ALLlabel_patient_DS = monai.data.Dataset(
             data=test_patient,
@@ -360,45 +366,59 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
 
     if dataset_mode ==6:
         print(f'[INFO] New Dataset_mode: {dataset_mode}')
-        print(f'[INFO] MODE 6: ALL labeled patients ---5 + NoLiver ---10 + NoLung ---10 --->15')
-        fulllabeled_name_sub = patient_name[:6]  # 前5个
-        NoLiver_name = patient_name[6:18]  # 10
-        NoLung_name = patient_name[
-                      18:30]  #10
+        print(f'TEST DATASET')
+        fulllabeled_name_sub_T = patient_name[0]  # 前5个
+        fulllabeled_name_sub_V = patient_name[2]  # 前5个
 
-        Fulllabel_str_list, Fulllabel_str_list_mask = leakylabel_generator(img_list, mask_list,
-                                                                           fulllabeled_name_sub, root_str)
-        Nolung_str_list, Nolung_str_list_mask = leakylabel_generator(img_list, mask_list, NoLung_name, root_str)
-        NoLiver_str_list, NoLiver_str_list_mask = leakylabel_generator(img_list, mask_list, NoLiver_name, root_str)
+        Fulllabel_str_list_T, Fulllabel_str_list_mask_T = leakylabel_generator(img_list, mask_list,
+                                                                           fulllabeled_name_sub_T, root_str)
 
+        Fulllabel_str_list_V, Fulllabel_str_list_mask_V = leakylabel_generator(img_list, mask_list,
+                                                                               fulllabeled_name_sub_V, root_str)
+
+        keys = ("image", "label", "leaky")
 
         if mode == 'train':
-
-            return Train_Full_Return(Fulllabel_str_list,Nolung_str_list,NoLiver_str_list,
-                    Fulllabel_str_list_mask,Nolung_str_list_mask,NoLiver_str_list_mask,
-                                   NoLung_name,NoLiver_name,)
+            Alllabel_patient_train = [
+                {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
+                zip(Fulllabel_str_list_T, Fulllabel_str_list_mask_T)
+            ]
+            train_ALLlabel_patient_DS = monai.data.Dataset(
+                data=Alllabel_patient_train,
+                transform=get_xform(mode=mode, leaky='all'),
+            )
+            return train_ALLlabel_patient_DS, [], []
         else:
-            
-            return Val_Full_Return(Fulllabel_str_list,Nolung_str_list,NoLiver_str_list,
-                    Fulllabel_str_list_mask,Nolung_str_list_mask,NoLiver_str_list_mask,
-                                   NoLung_name,NoLiver_name,)
+            Alllabel_patient_val = [
+                {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
+                zip(Fulllabel_str_list_V, Fulllabel_str_list_mask_V)
+            ]
+            val_ALLlabel_patient_DS = monai.data.Dataset(
+                data=Alllabel_patient_val,
+                transform=get_xform(mode=mode, leaky='all'),
+            )
+            return val_ALLlabel_patient_DS, [], []
 
     if dataset_mode ==1 or dataset_mode==2:
         print(f'[INFO] Dataset_mode: {dataset_mode}')
         print(f'[INFO] ALL labeled patients --->30') if dataset_mode == 1 else logging.info(f'[INFO] ALL labeled patients --->10')
 
 
-        fulllabeled_name_sub=patient_name[:18] if dataset_mode ==1 else patient_name[:6]
+        fulllabeled_name_sub_T=patient_name[:24] if dataset_mode ==1 else patient_name[:8]
+        fulllabeled_name_sub_V=patient_name[24:30] if dataset_mode ==1 else patient_name[8:10]
+        
 
-        Fulllabel_str_list, Fulllabel_str_list_mask = leakylabel_generator(img_list, mask_list, fulllabeled_name_sub,
+        Fulllabel_str_list_T, Fulllabel_str_list_mask_T = leakylabel_generator(img_list, mask_list, fulllabeled_name_sub_T,
+                                                                           root_str)
+        Fulllabel_str_list_V, Fulllabel_str_list_mask_V = leakylabel_generator(img_list, mask_list, fulllabeled_name_sub_V,
                                                                            root_str)
         keys = ("image", "label","leaky")
-        num_alllabel = len(Fulllabel_str_list)
+        num_alllabel = len(Fulllabel_str_list_T)
 
         if mode == 'train':
             Alllabel_patient_train = [
                 {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-                zip(Fulllabel_str_list[:int(num_alllabel * 0.8)], Fulllabel_str_list_mask[:int(num_alllabel * 0.8)])
+                zip(Fulllabel_str_list_T, Fulllabel_str_list_mask_T)
             ]
             train_ALLlabel_patient_DS = monai.data.Dataset(
                 data=Alllabel_patient_train,
@@ -408,7 +428,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
         else:
             Alllabel_patient_val = [
                 {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-                zip(Fulllabel_str_list[int(num_alllabel * 0.8):], Fulllabel_str_list_mask[int(num_alllabel * 0.8):])
+                zip(Fulllabel_str_list_V, Fulllabel_str_list_mask_V)
             ]
             val_ALLlabel_patient_DS = monai.data.Dataset(
                 data=Alllabel_patient_val,
@@ -421,31 +441,44 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
         print(f'[INFO] MODE 3: ALL labeled patients ---10 + NoLiver ---10 + NoLung ---10 --->30') if dataset_mode == 3 else print(
             f'  [INFO] MODE 4: ALL labeled patients ---10 + NoLiver ---10 + NoLung ---10 --->30 with modifiy label/trainstep')
 
-        fulllabeled_name_sub = patient_name[:6]  # 前十个
+        fulllabeled_name_sub_T = patient_name[:8]  # 前十个
+        fulllabeled_name_sub_V = patient_name[8:10]  # 前十个
 
 
-        NoLiver_name=patient_name[6:12]#10
-        NoLung_name=patient_name[12:18]#10
+        NoLiver_name=patient_name[10:18]#10
+        NoLiver_name_V=patient_name[18:20]#10
+
+        NoLung_name=patient_name[20:28]#10
+        NoLung_name_V=patient_name[28:30]#10
         #TODO: 根据病人名字分割出来三组list，保存的是路径
 
-        Fulllabel_str_list, Fulllabel_str_list_mask=leakylabel_generator(img_list, mask_list,
-                                                                         fulllabeled_name_sub, root_str)
+        Fulllabel_str_list_T, Fulllabel_str_list_mask_T=leakylabel_generator(img_list, mask_list,
+                                                                         fulllabeled_name_sub_T, root_str)
         Nolung_str_list, Nolung_str_list_mask=leakylabel_generator(img_list, mask_list,
                                                                          NoLung_name, root_str)
         NoLiver_str_list, NoLiver_str_list_mask=leakylabel_generator(img_list, mask_list,
                                                                      NoLiver_name, root_str)
 
+        Fulllabel_str_list_V, Fulllabel_str_list_mask_V = leakylabel_generator(img_list, mask_list,
+                                                                               fulllabeled_name_sub_V,
+                                                                               root_str)
+        Nolung_str_list_V, Nolung_str_list_mask_V = leakylabel_generator(img_list, mask_list,
+                                                                     NoLung_name_V, root_str)
+        NoLiver_str_list_V, NoLiver_str_list_mask_V = leakylabel_generator(img_list, mask_list,
+                                                                       NoLiver_name_V, root_str)
+
+
 
         if mode=='train':
 
-            return  Train_Full_Return(Fulllabel_str_list,Nolung_str_list,NoLiver_str_list,
-                        Fulllabel_str_list_mask,Nolung_str_list_mask,NoLiver_str_list_mask,
+            return  Train_Full_Return(Fulllabel_str_list_T,Nolung_str_list,NoLiver_str_list,
+                        Fulllabel_str_list_mask_T,Nolung_str_list_mask,NoLiver_str_list_mask,
                                        NoLung_name,NoLiver_name,)
         else:
 
-            return Val_Full_Return(Fulllabel_str_list, Nolung_str_list, NoLiver_str_list,
-                          Fulllabel_str_list_mask, Nolung_str_list_mask, NoLiver_str_list_mask,
-                          NoLung_name, NoLiver_name, )
+            return Val_Full_Return(Fulllabel_str_list_V, Nolung_str_list_V, NoLiver_str_list_V,
+                          Fulllabel_str_list_mask_V, Nolung_str_list_mask_V, NoLiver_str_list_mask_V,
+                          NoLung_name_V, NoLiver_name_V, )
 
 
 def test():
