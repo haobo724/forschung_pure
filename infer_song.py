@@ -21,6 +21,7 @@ def infer(models, raw_dir):
     parser = helpers.add_training_args(parser)
     parser = pl.Trainer.add_argparse_args(parser)
     parser.add_argument('--datasetmode',type=int, required=True,help='4 mode',default=1)
+    parser.add_argument('--opt',type=str, required=True,help='2 optimizers',default='Adam')
     parser = benchmark_unet_2d.add_model_specific_args(parser)
     args = parser.parse_args()
     logger = TensorBoardLogger(save_dir=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}'), name='my_test')

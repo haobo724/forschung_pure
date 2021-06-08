@@ -43,8 +43,7 @@ def leakylabel_generator(img_list, mask_list, leakylabellist,root_str):
     leakylabel_mask = []
     for index in range(len(img_list)):
         for leakylabel in leakylabellist:
-        # pattern_index = img_list[index].find('_', 0)
-        # pattern = img_list[index][:pattern_index]
+
             if re.findall(leakylabel, img_list[index]):
                 leakylabel_img.append(img_list[index])
                 leakylabel_mask.append(mask_list[index])
@@ -367,8 +366,10 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
     if dataset_mode ==6:
         print(f'[INFO] New Dataset_mode: {dataset_mode}')
         print(f'TEST DATASET')
-        fulllabeled_name_sub_T = patient_name[0]  # 前5个
-        fulllabeled_name_sub_V = patient_name[2]  # 前5个
+        fulllabeled_name_sub_T =[ patient_name[0]]  # 前5个
+        fulllabeled_name_sub_V = [patient_name[2]] # 前5个
+        print(fulllabeled_name_sub_T)
+        print(fulllabeled_name_sub_V)
 
         Fulllabel_str_list_T, Fulllabel_str_list_mask_T = leakylabel_generator(img_list, mask_list,
                                                                            fulllabeled_name_sub_T, root_str)
@@ -381,7 +382,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
         if mode == 'train':
             Alllabel_patient_train = [
                 {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-                zip(Fulllabel_str_list_T, Fulllabel_str_list_mask_T)
+                zip(Fulllabel_str_list_T[:10], Fulllabel_str_list_mask_T[:10])
             ]
             train_ALLlabel_patient_DS = monai.data.Dataset(
                 data=Alllabel_patient_train,

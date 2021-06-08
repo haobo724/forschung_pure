@@ -66,28 +66,28 @@ def cli_main():
 
     # Ckpt callbacks
     ckpt_callback = ModelCheckpoint(
-        monitor='valid/loss',
+        monitor='avg_iousummean',
         save_top_k=2,
-        mode='min',
+        mode='max',
         # save_last=True,
-        filename='{epoch:02d}-{avg_iou_individual_liver:.02f}'
+        filename='{epoch:02d}-{avg_iousummean:.02f}'
     )
     if not os.path.exists(os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}')):
         os.makedirs(os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}'))
 
     logger = TensorBoardLogger(save_dir=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}'), name='my_model')
     # create trainer using pytorch_lightning
-    trainer = pl.Trainer.from_argparse_args(args,precision=16,auto_lr_find=True,check_val_every_n_epoch=2,callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger)
+    trainer = pl.Trainer.from_argparse_args(args,precision=16,check_val_every_n_epoch=2,callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger)
     # make the direcrory for the checkpoints
-    if not os.path.exists(os.path.join(trainer.logger.save_dir,'my_model',f'version_{trainer.logger.version}')
-                                               ):
-        os.makedirs(os.path.join(trainer.logger.save_dir,'my_model',f'version_{trainer.logger.version}'))
+    # if not os.path.exists(os.path.join(trainer.logger.save_dir,'my_model',f'version_{trainer.logger.version}')
+    #                                            ):
+    #     os.makedirs(os.path.join(trainer.logger.save_dir,'my_model',f'version_{trainer.logger.version}'))
 
-    # # configuration of event log
-    helpers.logging_init(log_fname= os.path.join(trainer.logger.save_dir,'my_model',f'version_{trainer.logger.version}',
-                                                f'{fname}.log'),
-                         log_lvl=logging.INFO
-                         )
+    # # # configuration of event log
+    # helpers.logging_init(log_fname= os.path.join(trainer.logger.save_dir,'my_model',f'version_{trainer.logger.version}',
+    #                                             f'{fname}.log'),
+    #                      log_lvl=logging.INFO
+    #                      )
 
     logging.info(f'Manual logging starts. Model version: {trainer.logger.version}_mode{args.datasetmode}')
 
@@ -103,12 +103,12 @@ def cli_main():
 
     # training
     #
-    lr =trainer.tuner.lr_find(model=net,datamodule=dm)
+    # lr =trainer.tuner.lr_find(model=net,datamodule=dm)
 
     # # fig=lr.plot(suggest=True)
     # # fig.show()
-    net.lr=lr.suggestion()
-    print('best initial lr:',net.lr)
+    # net.lr=lr.suggestion()
+    # print('best initial lr:',net.lr)
     trainer.fit(model=net,datamodule=dm)
 
     logging.info("!!!!!!!!!!!!!!This is the end of the training!!!!!!!!!!!!!!!!!!!!!!")
