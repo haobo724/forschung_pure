@@ -33,7 +33,6 @@ class benchmark_unet_2d(BasetRAIN):
         weights = [0.5, 1.0, 3.0, 5.0]
 
         self.loss = CELoss(weight=weights)
-        # self.hparams = hparams
 
         self.save_hyperparameters()
 
@@ -58,18 +57,21 @@ def cli_main():
     parser = benchmark_unet_2d.add_model_specific_args(parser)
     parser.add_argument('--datasetmode',type=int, required=True,help='4 mode',default=1)
     parser.add_argument('--opt',type=str, required=True,help='2 optimizers',default='Adam')
+    parser.add_argument('--resume',type=bool, required=False,help='if continue train',default=False)
+    parser.add_argument('--lastcheckpoint',type=str, required=False,help='path to lastcheckpoint',default='')
+    parser.add_argument('--hpar',type=str, required=False,help='path to lastcheckpoint',default='')
     args = parser.parse_args()
 
 
     # create the pipeline
-    net = benchmark_unet_2d(hparams=vars(args))
+    net = benchmark_unet_2d(hparams=vars(args)).load_from_checkpoint(args.lastcheckpoint,hparams_file=args.hpar)
 
     # Ckpt callbacks
     ckpt_callback = ModelCheckpoint(
         monitor='avg_iousummean',
         save_top_k=2,
         mode='max',
-        # save_last=True,
+        save_last=True,
         filename='{epoch:02d}-{avg_iousummean:.02f}'
     )
     if not os.path.exists(os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}')):
@@ -77,17 +79,12 @@ def cli_main():
 
     logger = TensorBoardLogger(save_dir=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}'), name='my_model')
     # create trainer using pytorch_lightning
-    trainer = pl.Trainer.from_argparse_args(args,precision=16,check_val_every_n_epoch=2,callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger)
-    # make the direcrory for the checkpoints
-    # if not os.path.exists(os.path.join(trainer.logger.save_dir,'my_model',f'version_{trainer.logger.version}')
-    #                                            ):
-    #     os.makedirs(os.path.join(trainer.logger.save_dir,'my_model',f'version_{trainer.logger.version}'))
-
-    # # # configuration of event log
-    # helpers.logging_init(log_fname= os.path.join(trainer.logger.save_dir,'my_model',f'version_{trainer.logger.version}',
-    #                                             f'{fname}.log'),
-    #                      log_lvl=logging.INFO
-    #                      )
+    if args.resume:
+        trainer = pl.Trainer.from_argparse_args(args,precision=16,check_val_every_n_epoch=2,callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger
+                                                ,resume_from_checkpoint=args.lastcheckpoint)
+        print("trainer root: ",trainer.log_dir)
+    else:
+        trainer = pl.Trainer.from_argparse_args(args,precision=16,check_val_every_n_epoch=2,callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger)
 
     logging.info(f'Manual logging starts. Model version: {trainer.logger.version}_mode{args.datasetmode}')
 
