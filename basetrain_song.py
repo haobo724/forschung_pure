@@ -64,7 +64,6 @@ def cli_main():
 
 
     # create the pipeline
-    net = benchmark_unet_2d(hparams=vars(args)).load_from_checkpoint(args.lastcheckpoint,hparams_file=args.hpar)
 
     # Ckpt callbacks
     ckpt_callback = ModelCheckpoint(
@@ -80,10 +79,14 @@ def cli_main():
     logger = TensorBoardLogger(save_dir=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}'), name='my_model')
     # create trainer using pytorch_lightning
     if args.resume:
+        net = benchmark_unet_2d(hparams=vars(args)).load_from_checkpoint(args.lastcheckpoint, hparams_file=args.hpar)
+
         trainer = pl.Trainer.from_argparse_args(args,precision=16,check_val_every_n_epoch=2,callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger
                                                 ,resume_from_checkpoint=args.lastcheckpoint)
-        print("trainer root: ",trainer.log_dir)
+        print("trainer save_dir: ",trainer.logger.save_dir)
+        print("trainer log_dir: ",trainer.log_dir)
     else:
+        net = benchmark_unet_2d(hparams=vars(args))
         trainer = pl.Trainer.from_argparse_args(args,precision=16,check_val_every_n_epoch=2,callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger)
 
     logging.info(f'Manual logging starts. Model version: {trainer.logger.version}_mode{args.datasetmode}')

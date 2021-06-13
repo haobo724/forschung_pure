@@ -50,7 +50,7 @@ class Song_dataset_2d_with_CacheDataloder(pl.LightningDataModule):
             mxform.ScaleIntensityRanged(keys[0], a_min=-1024., a_max=3000., b_min=-1, b_max=1, clip=True),
             # # mxform.Spacingd(keys, pixdim=[0.89, 0.89, 1.5], mode=("bilinear", "nearest"))
             # # mxform.Resized(keys, spatial_size=(256,256), mode='nearest')
-            mxform.SpatialPadd(keys[:2], spatial_size=(512, 512), mode="reflect"),
+            mxform.SpatialPadd(keys[:2], spatial_size=(512, 512), mode="edge"),
             mxform.CenterSpatialCropd(keys[:2], roi_size=[512, 512]),
         ]
         if mode == "train":

@@ -17,7 +17,7 @@ class BasetRAIN(pl.LightningModule):
         self.model = None
         self.loss = None
         self.hparams.update(hparams)
-        self.weights = torch.tensor([0.1, 1.0, 3.0, 3.0]).cuda()
+        self.weights = torch.tensor([0.1, 1.0, 3.0, 3.0])
         self.lr=hparams['lr']
         self.batch_size=hparams['batch_size']
         self.opt=hparams['opt']
@@ -135,7 +135,7 @@ class BasetRAIN(pl.LightningModule):
         precision /= picked_channel.shape[0]
         dice_individual /= picked_channel.shape[0]
         recall /= picked_channel.shape[0]
-        iou_summean =torch.sum(iou_individual * self.weights)
+        iou_summean =torch.sum(iou_individual * self.weights.cuda())
 
 
 
