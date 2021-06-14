@@ -8,7 +8,7 @@ import pytorch_lightning as pl
 from models.BasicUnet import BasicUnet
 
 # Loss import
-from loss import CELoss
+from loss import CELoss,DiceLoss
 
 from argparse import ArgumentParser
 
@@ -33,6 +33,7 @@ class benchmark_unet_2d(BasetRAIN):
         weights = [0.5, 2.0, 1.0, 1.0]
 
         self.loss = CELoss(weight=weights)
+        # self.loss2 = DiceLoss(weight=weights)
 
         self.save_hyperparameters()
 

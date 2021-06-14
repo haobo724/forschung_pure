@@ -77,13 +77,15 @@ def getpatient_name(img_list):
             patient_name.append(curName)
             patient_num += 1
     return patient_name,patient_num
-
+    # "left_lung": 6,
+    # "liver": 7,
+    # "right_lung": 8,
 def get_xform(mode="train", keys=("image", "label","leaky"),leaky=None,leakylist=None):
     xforms = [
         mxform.LoadImaged(keys[:2]),
         custom_transform.Transposed(keys[:2], (1, 0)),
         mxform.AddChanneld(keys[:2]),
-        custom_transform.NormalizeLabeld(keys=['label'], from_list=[0,7, 8, 6], to_list=[0,1, 2, 3]),
+        custom_transform.NormalizeLabeld(keys=['label'], from_list=[0, 7, 8, 6], to_list=[0,1, 2, 3]),
         # custom_transform.Leakylabel(keys=["leaky"]),
         mxform.ScaleIntensityRanged(keys[0], a_min=-1024., a_max=3000., b_min=-1, b_max=1, clip=True),
         # # mxform.Spacingd(keys, pixdim=[0.89, 0.89, 1.5], mode=("bilinear", "nearest"))
@@ -111,7 +113,7 @@ def get_xform(mode="train", keys=("image", "label","leaky"),leaky=None,leakylist
     elif mode == "val":
         dtype = (np.float32, np.float32)
     elif mode == "test":
-        # xforms = xforms[:-2]
+        xforms = xforms[:-2]
         dtype = (np.float32,np.float32)
 
     if leaky =='liver':
@@ -271,7 +273,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
 
     if dataset_mode ==5:
         print(f'[INFO] TEST Dataset_mode: {dataset_mode}')
-        fulllabeled_name_sub_T=patient_name[30:34]
+        fulllabeled_name_sub_T=patient_name[30:35]
         # if len(fulllabeled_name_sub_T)==1:
         # fulllabeled_name_sub_T=[fulllabeled_name_sub_T]
         Fulllabel_str_list_T, Fulllabel_str_list_mask_T = leakylabel_generator(img_list, mask_list, fulllabeled_name_sub_T,

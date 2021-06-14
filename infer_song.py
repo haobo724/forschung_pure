@@ -5,7 +5,7 @@ import monai
 from argparse import ArgumentParser
 import pytorch_lightning as pl
 import helpers
-import glob
+from monai.data.utils import pad_list_data_collate
 from ds import climain
 from pytorch_lightning.loggers import TensorBoardLogger
 
@@ -42,7 +42,9 @@ def infer(models, raw_dir):
     infer_loader = monai.data.DataLoader(
         infer_ds,
         batch_size=8,
-        num_workers=8
+        num_workers=8,
+        pin_memory=torch.cuda.is_available(),
+        collate_fn=pad_list_data_collate
     )
     model = benchmark_unet_2d.load_from_checkpoint(models,hparams=vars(args))
     trainer=pl.Trainer(gpus=-1,logger=logger)

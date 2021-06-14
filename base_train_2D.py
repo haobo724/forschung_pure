@@ -17,7 +17,7 @@ class BasetRAIN(pl.LightningModule):
         self.model = None
         self.loss = None
         self.hparams.update(hparams)
-        self.weights = torch.tensor([0.1, 1.0, 3.0, 3.0])
+        self.weights = torch.tensor([0.1, 2.0, 1.0, 1.0])
         self.lr=hparams['lr']
         self.batch_size=hparams['batch_size']
         self.opt=hparams['opt']
@@ -88,33 +88,33 @@ class BasetRAIN(pl.LightningModule):
         z_bactch= batch["leaky"]
         pred = self(x)
         y_copy = y.clone()
-        if self.modifiy_label_ON:
-            for idx, z in enumerate(z_bactch):
-                if z != 0:
-                    # pred = torch.squeeze(y_hat)
-                    predc = pred.permute(0, 2, 3, 1)
-                    predc = torch.softmax(predc[idx, ...], dim=-1)
-                    picked_channel = predc[idx, ...].argmax(dim=-1)
-
-                    cords = np.argwhere(picked_channel.cpu().numpy() == z)
-                    realcord = []
-                    for cord in cords:
-                        if y_copy[idx, 0, cord[0], cord[1]] == 0:
-                            realcord.append(cord)
-
-                    for cord in realcord:
-                        y_copy[idx, 0, cord[0], cord[1]] = z
-                    # todo:如果是肺(label=2，左肺)，右肺（label=3）再来一遍
-                    if z == 2:
-                        cord_zusatz = np.argwhere(picked_channel.cpu().numpy() == z + 1)
-                        realcord = []
-                        for cord in cord_zusatz:
-                            if y_copy[idx, 0, cord[0], cord[1]] == 0:
-                                realcord.append(cord)
-
-                        for cord in realcord:
-                            y_copy[idx, 0, cord[0], cord[1]] = z + 1
-                #
+        # if self.modifiy_label_ON:
+        #     for idx, z in enumerate(z_bactch):
+        #         if z != 0:
+        #             # pred = torch.squeeze(y_hat)
+        #             predc = pred.permute(0, 2, 3, 1)
+        #             predc = torch.softmax(predc[idx, ...], dim=-1)
+        #             picked_channel = predc[idx, ...].argmax(dim=-1)
+        #
+        #             cords = np.argwhere(picked_channel.cpu().numpy() == z)
+        #             realcord = []
+        #             for cord in cords:
+        #                 if y_copy[idx, 0, cord[0], cord[1]] == 0:
+        #                     realcord.append(cord)
+        #
+        #             for cord in realcord:
+        #                 y_copy[idx, 0, cord[0], cord[1]] = z
+        #             # todo:如果是肺(label=2，左肺)，右肺（label=3）再来一遍
+        #             if z == 2:
+        #                 cord_zusatz = np.argwhere(picked_channel.cpu().numpy() == z + 1)
+        #                 realcord = []
+        #                 for cord in cord_zusatz:
+        #                     if y_copy[idx, 0, cord[0], cord[1]] == 0:
+        #                         realcord.append(cord)
+        #
+        #                 for cord in realcord:
+        #                     y_copy[idx, 0, cord[0], cord[1]] = z + 1
+        #         #
 
         loss = self.loss.forward(pred, y_copy)
 
@@ -219,6 +219,8 @@ class BasetRAIN(pl.LightningModule):
         for index in range(picked_channel.shape[0]):
             iou_individual += self.validation_IOU2(picked_channel[index,...], y[index,...].long())
         iou_individual = iou_individual/picked_channel.shape[0]
+        iou_summean =torch.sum(iou_individual * self.weights.cuda())
+
         # dice=dice_score(torch.softmax(y_hat, dim=1),y.squeeze(1).long(),reduction='none',bg=True,no_fg_score=1)[:4]
         show=0
         if show:
@@ -247,6 +249,7 @@ class BasetRAIN(pl.LightningModule):
         returndic.setdefault("iou_individual_liver",iou_individual[1])
         returndic.setdefault("iou_individual_left_lung",iou_individual[2])
         returndic.setdefault("iou_individual_right_lung",iou_individual[3])
+        returndic.setdefault("iou_summean",iou_summean)
 
 
         return returndic
@@ -256,6 +259,9 @@ class BasetRAIN(pl.LightningModule):
         avg_iou_individual_liver = torch.stack([x['iou_individual_liver'] for x in outputs]).mean()
         avg_iou_individual_left_lung = torch.stack([x['iou_individual_left_lung'] for x in outputs]).mean()
         avg_iou_individual_right_lung = torch.stack([x['iou_individual_right_lung'] for x in outputs]).mean()
+        avg_iousummean = torch.stack([x['iou_summean'] for x in outputs]).mean()
+
+        self.log('avg_iousummean', avg_iousummean,logger=True)
         self.log('valid/avg_iou_individual_bg', avg_iou_individual_bg, logger=True)
         self.log('valid/avg_iou_individual_liver', avg_iou_individual_liver, logger=True)
         self.log('valid/avg_iou_individual_left_lung', avg_iou_individual_left_lung, logger=True)
