@@ -237,7 +237,8 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
 
     patient_name,patient_num=getpatient_name(img_list)
     patient_name=sorted(patient_name)
-    if dataset_mode ==7:
+
+    if dataset_mode ==7 or dataset_mode ==8:
         NoLiver_name = patient_name[10:18]  # 10
         NoLiver_name_V = patient_name[18:20]  # 10
         NoLung_name = patient_name[20:28]  # 10

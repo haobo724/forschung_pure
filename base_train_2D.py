@@ -27,7 +27,7 @@ class BasetRAIN(pl.LightningModule):
         self.validation_precision = pl.metrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_IOU = pl.metrics.IoU( num_classes=4,absent_score=True)
         self.validation_IOU2 = pl.metrics.IoU( num_classes=4,absent_score=1,reduction='none')
-        if hparams['datasetmode']== 4 :
+        if hparams['datasetmode']== 4 or hparams['datasetmode']==8:
             self.modifiy_label_ON=True
             print(f'[INFO] modifiy_label_ON={self.modifiy_label_ON}')
         else:
