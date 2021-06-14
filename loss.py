@@ -34,7 +34,7 @@ class DiceLoss(torch.nn.Module):
         else:
             self.weights = torch.Tensor(weight)
 
-    def __call__(self, y_hat, y):
+    def forward(self, y_hat, y):
         # calculate dice loss using torch methods
         # y_hat.shape = [bs, out_channel, w, h]
         # y.shape = [bs, w, h]
@@ -43,9 +43,9 @@ class DiceLoss(torch.nn.Module):
         bs, out_channel, w, h = y_hat.shape
         y_hat = torch.sigmoid(y_hat)
 
-        y = y.unsqueeze(1)
         y_onehot = torch.zeros_like(y_hat)
-        y_onehot.scatter_(1, y.type(torch.int64), 1)
+        y_onehot.scatter_(1, y.type(torch.int64),1)
+        y = y.unsqueeze(1)
 
         # set up weights
 

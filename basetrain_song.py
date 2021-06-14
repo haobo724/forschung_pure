@@ -33,8 +33,8 @@ class benchmark_unet_2d(BasetRAIN):
         weights = [0.5, 2.0, 1.0, 1.0]
 
         # self.loss = CELoss(weight=weights)
-        self.loss = monai.losses.DiceLoss(to_onehot_y=True)
-
+        # self.loss = monai.losses.DiceLoss(to_onehot_y=True)
+        self.loss= DiceLoss(weight=weights)
         self.save_hyperparameters()
 
     @staticmethod
