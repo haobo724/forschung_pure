@@ -296,8 +296,8 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
     if dataset_mode ==6:
         print(f'[INFO] New Dataset_mode: {dataset_mode}')
         print(f'TEST CacheDataset')
-        fulllabeled_name_sub_T =[ patient_name[0]]  # 前5个
-        fulllabeled_name_sub_V = [patient_name[2]] # 前5个
+        fulllabeled_name_sub_T =[ patient_name[0]]  #
+        fulllabeled_name_sub_V = [patient_name[2]] #
 
         Fulllabel_str_list_T, Fulllabel_str_list_mask_T = leakylabel_generator(img_list, mask_list,
                                                                            fulllabeled_name_sub_T, root_str)
@@ -310,10 +310,10 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
         if mode == 'train':
             Alllabel_patient_train = [
                 {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-                zip(Fulllabel_str_list_T[:10], Fulllabel_str_list_mask_T[:10])
+                zip(Fulllabel_str_list_T, Fulllabel_str_list_mask_T)
             ]
             train_ALLlabel_patient_DS = monai.data.CacheDataset(
-                data=Alllabel_patient_train,
+                data=Alllabel_patient_train[:5],
                 transform=get_xform(mode=mode, leaky='all'),
                 num_workers=Input_worker
             )
@@ -324,7 +324,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
                 zip(Fulllabel_str_list_V, Fulllabel_str_list_mask_V)
             ]
             val_ALLlabel_patient_DS = monai.data.CacheDataset(
-                data=Alllabel_patient_val,
+                data=Alllabel_patient_val[:5],
                 transform=get_xform(mode=mode, leaky='all'),
                 num_workers=Input_worker
 

@@ -260,7 +260,6 @@ class BasetRAIN(pl.LightningModule):
         avg_iou_individual_left_lung = torch.stack([x['iou_individual_left_lung'] for x in outputs]).mean()
         avg_iou_individual_right_lung = torch.stack([x['iou_individual_right_lung'] for x in outputs]).mean()
         avg_iousummean = torch.stack([x['iou_summean'] for x in outputs]).mean()
-
         self.log('avg_iousummean', avg_iousummean,logger=True)
         self.log('valid/avg_iou_individual_bg', avg_iou_individual_bg, logger=True)
         self.log('valid/avg_iou_individual_liver', avg_iou_individual_liver, logger=True)

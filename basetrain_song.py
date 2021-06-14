@@ -9,7 +9,7 @@ from models.BasicUnet import BasicUnet
 
 # Loss import
 from loss import CELoss,DiceLoss
-
+import monai
 from argparse import ArgumentParser
 
 from data_module.song_dataset import Song_dataset_2d_with_CacheDataloder
@@ -32,8 +32,8 @@ class benchmark_unet_2d(BasetRAIN):
         self.model = BasicUnet(in_channels=1, out_channels=4, nfilters=32).cuda()
         weights = [0.5, 2.0, 1.0, 1.0]
 
-        self.loss = CELoss(weight=weights)
-        # self.loss2 = DiceLoss(weight=weights)
+        # self.loss = CELoss(weight=weights)
+        self.loss = monai.losses.DiceLoss(to_onehot_y=True)
 
         self.save_hyperparameters()
 
@@ -62,8 +62,13 @@ def cli_main():
     parser.add_argument('--lastcheckpoint',type=str, required=False,help='path to lastcheckpoint',default='')
     parser.add_argument('--hpar',type=str, required=False,help='path to lastcheckpoint',default='')
     args = parser.parse_args()
-
-
+    print(args.resume)
+    # --resume
+    # False
+    # --lastcheckpoint
+    # F:\Forschung\pure\lightning_logs\mode3\my_model\version_0\checkpoints\last.ckpt
+    # --hpar
+    # F:\Forschung\pure\lightning_logs\mode3\my_model\version_0\hparams.yaml
     # create the pipeline
 
     # Ckpt callbacks
@@ -80,12 +85,10 @@ def cli_main():
     logger = TensorBoardLogger(save_dir=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}'), name='my_model')
     # create trainer using pytorch_lightning
     if args.resume:
-        net = benchmark_unet_2d(hparams=vars(args)).load_from_checkpoint(args.lastcheckpoint, hparams_file=args.hpar)
-
+        print("Resume")
+        net = benchmark_unet_2d(hparams=vars(args))
         trainer = pl.Trainer.from_argparse_args(args,precision=16,check_val_every_n_epoch=2,callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger
                                                 ,resume_from_checkpoint=args.lastcheckpoint)
-        print("trainer save_dir: ",trainer.logger.save_dir)
-        print("trainer log_dir: ",trainer.log_dir)
     else:
         net = benchmark_unet_2d(hparams=vars(args))
         trainer = pl.Trainer.from_argparse_args(args,precision=16,check_val_every_n_epoch=2,callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger)
