@@ -30,7 +30,7 @@ class benchmark_unet_2d(BasetRAIN):
         super().__init__(hparams)
 
         self.model = BasicUnet(in_channels=1, out_channels=4, nfilters=32).cuda()
-        weights = [0.5, 1.0, 3.0, 5.0]
+        weights = [0.5, 2.0, 1.0, 1.0]
 
         self.loss = CELoss(weight=weights)
 

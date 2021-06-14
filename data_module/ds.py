@@ -16,7 +16,7 @@
 +--------+--------------+-----------------------+----------------------+-----+----------+-------+----------------+
 | Mode 4 |       6      |           6           |           6          |  18 |   True   | 30    |       33%      |
 +--------+--------------+-----------------------+----------------------+-----+----------+-------+----------------+
-| Mode 5（7） |       0      |           6           |           6          |  12 |   False  | 30    |       50%      |
+| Mode 7（8） |       0      |           6           |           6          |  12 |   False  | 30    |       50%      |
 +--------+--------------+-----------------------+----------------------+-----+----------+-------+----------------+
 
 
@@ -210,8 +210,12 @@ def Part_Return(Nolung_str_list,NoLiver_str_list,
         zip(NoLiver_str_list, NoLiver_str_list_mask)
     ]
     # Todo：三种transform
-    train_transform__Nolung = get_xform(mode=mode, leaky='lung', leakylist=NoLung_name)
-    train_transform__NoLiver = get_xform(mode=mode, leaky='liver', leakylist=NoLiver_name)
+    if mode == 'train':
+        train_transform__Nolung = get_xform(mode=mode, leaky='lung', leakylist=NoLung_name)
+        train_transform__NoLiver = get_xform(mode=mode, leaky='liver', leakylist=NoLiver_name)
+    else:
+        train_transform__Nolung = get_xform(mode=mode, leaky='all', leakylist=NoLung_name)
+        train_transform__NoLiver = get_xform(mode=mode, leaky='all', leakylist=NoLiver_name)
 
     # Todo：对应三种Ds
 
@@ -267,9 +271,9 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
 
     if dataset_mode ==5:
         print(f'[INFO] TEST Dataset_mode: {dataset_mode}')
-        fulllabeled_name_sub_T=patient_name[32:34]
-        if len(fulllabeled_name_sub_T)==1:
-            fulllabeled_name_sub_T=[fulllabeled_name_sub_T]
+        fulllabeled_name_sub_T=patient_name[30:34]
+        # if len(fulllabeled_name_sub_T)==1:
+        # fulllabeled_name_sub_T=[fulllabeled_name_sub_T]
         Fulllabel_str_list_T, Fulllabel_str_list_mask_T = leakylabel_generator(img_list, mask_list, fulllabeled_name_sub_T,
                                                                                root_str)
         keys = ("image", "label", "leaky")
