@@ -14,18 +14,24 @@ sys.path.append(os.path.dirname(__file__))
 
 from basetrain_song import benchmark_unet_2d
 
-def infer(models, raw_dir):
-    if raw_dir is None or models is None:
-        ValueError('raw_dir or model is missing')
+def infer():
+
     parser = ArgumentParser()
     parser = helpers.add_training_args(parser)
     parser = pl.Trainer.add_argparse_args(parser)
     parser.add_argument('--datasetmode',type=int, required=True,help='4 mode',default=1)
     parser.add_argument('--opt',type=str, required=True,help='2 optimizers',default='Adam')
+    parser.add_argument('--ckpt',type=str,default='local')
     parser = benchmark_unet_2d.add_model_specific_args(parser)
     args = parser.parse_args()
     logger = TensorBoardLogger(save_dir=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}'), name='my_test')
-
+    if args.ckpt=='local':
+        modelslist=[]
+        for root,dirs,files in os.walk(r"F:\Forschung\multiorganseg\good\onlyfresh"):
+            for file in files:
+                if file.endswith('.ckpt'):
+                    modelslist.append(os.path.join(root, file))
+        args.ckpt=modelslist[0]
     # images = sorted(glob.glob(os.path.join(raw_dir, '*_ct.nii.gz')))
     # labels = sorted(glob.glob(os.path.join(raw_dir, '*_seg.nii.gz')))
     # assert len(images) == len(labels)
@@ -46,18 +52,18 @@ def infer(models, raw_dir):
         pin_memory=torch.cuda.is_available(),
         collate_fn=pad_list_data_collate
     )
-    model = benchmark_unet_2d.load_from_checkpoint(models,hparams=vars(args))
+    model = benchmark_unet_2d.load_from_checkpoint(args.ckpt,hparams=vars(args))
     trainer=pl.Trainer(gpus=-1,logger=logger)
     trainer.test(model,infer_loader)
 
 if __name__ == "__main__":
     # root,dirs,files=os.walk('./mostoolkit/lightning_logs/version_65')
-    # print(root)
-    modelslist=[]
-    for root,dirs,files in os.walk(r"F:\Forschung\multiorganseg\good\onlyfresh"):
-        for file in files:
-            if file.endswith('.ckpt'):
-                modelslist.append(os.path.join(root, file))
-    print(modelslist)
-    print(modelslist[0])
-    infer(modelslist[0],r'F:\Forschung\multiorganseg\data\train_2D')
+
+    infer()
+
+    # modelslist=[]
+    # for root,dirs,files in os.walk(r"F:\Forschung\multiorganseg\good\onlyfresh"):
+    #     for file in files:
+    #         if file.endswith('.ckpt'):
+    #             modelslist.append(os.path.join(root, file))
+    # infer(modelslist[0],r'F:\Forschung\multiorganseg\data\train_2D')

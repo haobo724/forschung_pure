@@ -31,16 +31,21 @@ class benchmark_unet_2d(BasetRAIN):
 
         self.model = BasicUnet(in_channels=1, out_channels=4, nfilters=32).cuda()
         weights = [0.5, 2.0, 1.0, 1.0]
-
-        # self.loss = CELoss(weight=weights)
+        if hparams['loss']=='CE':
+            self.loss = CELoss(weight=weights)
+            print("CELoss will be used")
+        else:
         # self.loss = monai.losses.DiceLoss(to_onehot_y=True)
-        self.loss= DiceLoss(weight=weights)
+            self.loss= DiceLoss(weight=weights)
+            print("DiceLoss will be used")
+
         self.save_hyperparameters()
 
     @staticmethod
     def add_model_specific_args(parent_parser):
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
         parser.add_argument('--lr', type=float, default=1e-4)
+        parser.add_argument('--loss', type=str, default='CE')
         return parser
 
 

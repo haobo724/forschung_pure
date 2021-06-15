@@ -21,7 +21,7 @@ class BasetRAIN(pl.LightningModule):
         self.lr=hparams['lr']
         self.batch_size=hparams['batch_size']
         self.opt=hparams['opt']
-
+        self.lr_scheduler =None
         # self.train_logger = logging.getLogger(__name__)
         self.validation_recall = pl.metrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_precision = pl.metrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
@@ -41,7 +41,9 @@ class BasetRAIN(pl.LightningModule):
     def training_step(self, batch, batch_idx, dataset_idx=None):
         x, y = batch["image"], batch["label"]
         z_bactch =batch["leaky"]
-
+        if self.lr != 5e-4:
+            print("wow!")
+            print("lr=",self.lr)
         y_hat = self(x)
         y_copy = y.clone()
         # for idx,yc in enumerate(y_copy):
@@ -204,10 +206,34 @@ class BasetRAIN(pl.LightningModule):
     def configure_optimizers(self):
         if self.opt=='Adam':
             print(f'[INFO] Adam will be used ,lr = {self.lr}')
-            return torch.optim.Adam(self.parameters(), lr=self.lr)
+            # return torch.optim.Adam(self.parameters(), lr=self.lr)
+            optimizer=torch.optim.Adam(self.parameters(), lr=self.lr)
+            # return optimizer
+
+            lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2,mode='max', factor=0.9, verbose=True)
+            scheduler = {
+                'scheduler': lr_scheduler,
+                'reduce_on_plateau': True,
+                # val_checkpoint_on is val_loss passed in as checkpoint_on
+                'monitor': 'avg_iousummean'
+            }
+
+            return [optimizer], [scheduler]
         else:
             print(f'[INFO] SGD will be used ,lr = {self.lr}')
-            return torch.optim.SGD(self.parameters(), lr=self.lr)
+            optimizer= torch.optim.SGD(self.parameters(), lr=self.lr,momentum=0.9)
+
+            return optimizer
+            # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, mode='max', factor=0.9,
+            #                                                           verbose=True)
+            # scheduler = {
+            #     'scheduler': lr_scheduler,
+            #     'reduce_on_plateau': True,
+            #     # val_checkpoint_on is val_loss passed in as checkpoint_on
+            #     'monitor': 'avg_iousummean'
+            # }
+            #
+            # return [optimizer], [scheduler]
 
     def test_step(self, batch, batch_idx, dataset_idx=None):
         x, y = batch['image'], batch['label']
