@@ -22,7 +22,6 @@ class BasetRAIN(pl.LightningModule):
         self.batch_size=hparams['batch_size']
         self.opt=hparams['opt']
         self.lr_scheduler =None
-        self.tee=None
         # self.train_logger = logging.getLogger(__name__)
         self.validation_recall = pl.metrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_precision = pl.metrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
