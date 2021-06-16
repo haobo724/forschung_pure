@@ -31,7 +31,9 @@ class Leakylabel(BaseTransform):
     '''
     如果leaky是liver那么附加通道给的tag就是1
     如果leaky是lung那么附加通道给的tag就是2
-
+    leaky list是包含要设置为缺省数据的病人的名字
+    原leaky通道装的是字符串，img的完整路径名
+    好像可以优化去掉for循环直接给leaky通道赋值为对应的tag，因为既然能调用这个类那必定是缺省数据集，就不需要if判断当前数据名字是否在leakyname名单里
 
     '''
     def __init__(self,keys: list, leakylist, leaky):
@@ -42,6 +44,7 @@ class Leakylabel(BaseTransform):
             self.tag=1
         else:
             self.tag=2
+    #Todo: 去掉for
     def __call__(self, data: dict):
        # for key in self.keys:
         for leakyname in self.leakylist:
@@ -52,6 +55,10 @@ class Leakylabel(BaseTransform):
         return data
 
 class LeakylabelALLFALSE(BaseTransform):
+    '''
+
+    将非缺省数据集的leaky通道设为0，传入的key为leaky
+    '''
     def __init__(self,keys: list):
         super().__init__(keys)
     def __call__(self, data: dict):

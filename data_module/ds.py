@@ -35,6 +35,10 @@ import logging
 from monai.data.utils import list_data_collate
 
 def leakylabel_generator(img_list, mask_list, leakylabellist,root_str):
+    '''
+    input:装着所有img和mask名字的list，被指定为缺省数据的病人名字和mask和img的路径
+    output：两个分别装着被指定为缺省数据的img和mask的完整路径的list
+    '''
     leakylabel_img = []
     leakylabel_mask = []
     for index in range(len(img_list)):
@@ -43,11 +47,17 @@ def leakylabel_generator(img_list, mask_list, leakylabellist,root_str):
             if re.findall(leakylabel, img_list[index]):
                 leakylabel_img.append(img_list[index])
                 leakylabel_mask.append(mask_list[index])
-    noliver_img = [root_str + '/' + i for i in leakylabel_img]
-    noliver_mask = [root_str + '/' + i for i in leakylabel_mask]
-    return noliver_img, noliver_mask
+    leakylabel_img_list = [root_str + '/' + i for i in leakylabel_img]
+    leakylabel_mask_list = [root_str + '/' + i for i in leakylabel_mask]
+    return leakylabel_img_list, leakylabel_mask_list
 
-def getdataset(data_path):#mask 和 img在同一目录
+def getdataset(data_path):
+    '''
+   前提： mask 和 img在同一目录
+   input：mask和img的路径
+   output：两个list分别是img和mask的文件名，和mask和img的路径（不包括文件名），可以优化掉这个可能是忘了
+
+    '''
     img_list = []
     mask_list = []
     root_str=''
@@ -64,6 +74,10 @@ def getdataset(data_path):#mask 和 img在同一目录
     return root_str,img_list,mask_list
 
 def getpatient_name(img_list):
+    '''
+    input：装着img名字的list
+    output：病人名字的list
+    '''
     patient_name = []
     patient_num=0
     curName = ''
@@ -81,6 +95,16 @@ def getpatient_name(img_list):
     # "liver": 7,
     # "right_lung": 8,
 def get_xform(mode="train", keys=("image", "label","leaky"),leaky=None,leakylist=None):
+    '''
+    首先把肝肺原本的678映射成123
+
+    对数据分两步操作
+    首先如数据集加一个channel，名字叫leaky，根据缺少的类型设置为1或2
+    其次根据缺少的类型把数据映射成0，即背景
+    如果非缺省数据集，那么leaky通道的数值设为0
+
+
+    '''
     xforms = [
         mxform.LoadImaged(keys[:2]),
         custom_transform.Transposed(keys[:2], (1, 0)),
@@ -148,7 +172,9 @@ def get_xform(mode="train", keys=("image", "label","leaky"),leaky=None,leakylist
 def Full_Return(Fulllabel_str_list_T,Nolung_str_list,NoLiver_str_list,
                     Fulllabel_str_list_mask_T,Nolung_str_list_mask,NoLiver_str_list_mask,
                     NoLung_name,NoLiver_name,mode):
-
+    '''
+    返回三个数据集，非缺省，缺肝，缺肺
+    '''
     # TODO: 转化为dict
     keys = ("image", "label", "leaky")
     Alllabel_patient = [
@@ -199,6 +225,9 @@ def Full_Return(Fulllabel_str_list_T,Nolung_str_list,NoLiver_str_list,
 def Part_Return(Nolung_str_list,NoLiver_str_list,
                     Nolung_str_list_mask,NoLiver_str_list_mask,
                     NoLung_name,NoLiver_name,mode):
+    '''
+    返回部分数据集，缺肝，缺肺
+    '''
     # TODO: 转化为dict
     keys = ("image", "label", "leaky")
 
@@ -238,6 +267,11 @@ def Part_Return(Nolung_str_list,NoLiver_str_list,
 
 
 def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4,mode='train',dataset_mode=6):
+    '''
+    根据传入不同的datasetmode返回不同组成的dataset
+    根据传入不同的mode返回train 或 val 或test
+
+    '''
     data_path=data_path
     root_str,img_list,mask_list = getdataset(data_path)
 
