@@ -61,11 +61,7 @@ def cli_main():
     parser = helpers.add_training_args(parser)
     parser = pl.Trainer.add_argparse_args(parser)
     parser = benchmark_unet_2d.add_model_specific_args(parser)
-    parser.add_argument('--datasetmode',type=int, required=True,help='4 mode',default=1)
-    parser.add_argument('--opt',type=str, required=True,help='2 optimizers',default='Adam')
-    parser.add_argument('--resume',type=bool, required=False,help='if continue train',default=False)
-    parser.add_argument('--lastcheckpoint',type=str, required=False,help='path to lastcheckpoint',default='')
-    parser.add_argument('--hpar',type=str, required=False,help='path to lastcheckpoint',default='')
+
     args = parser.parse_args()
     print(args.resume)
     # --resume

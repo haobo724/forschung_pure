@@ -223,7 +223,7 @@ class BasetRAIN(pl.LightningModule):
             # return [optimizer], [scheduler]
         else:
             print(f'[INFO] SGD will be used ,lr = {self.lr}')
-            optimizer= torch.optim.SGD(self.parameters(), lr=self.lr,momentum=0.9)
+            optimizer= torch.optim.SGD(self.parameters(), lr=self.lr,momentum=0.9,)
 
             return optimizer
             # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=3, mode='max', factor=0.9,

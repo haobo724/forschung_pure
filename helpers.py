@@ -28,11 +28,15 @@ def add_training_args(parent_parser):
     parser = ArgumentParser(parents=[parent_parser], add_help=False)
 
     parser.add_argument('--data_folder', nargs='+', type=str, default='/cluster/liu/data/')
-    # parser.add_argument("--log_path", type=str, default='train')
+    parser.add_argument('--datasetmode',type=int, required=True,help='4 mode',default=1)
+    parser.add_argument('--opt',type=str, required=True,help='2 optimizers',default='Adam')
+    parser.add_argument('--resume',type=bool, required=False,help='if continue train',default=False)
+    parser.add_argument('--lastcheckpoint',type=str, required=False,help='path to lastcheckpoint',default='')
+    parser.add_argument('--hpar',type=str, required=False,help='path to lastcheckpoint',default='')
+    parser.add_argument('--ckpt',type=str,default='local')
     parser.add_argument('--cluster', type=bool, default=False)
     parser.add_argument("--worker", type=int, default=8)
     parser.add_argument("--batch_size", type=int, default=4)
-    parser.add_argument("--test_data_folder", type=str, default='/cluster/liu/data/visceral_manual_seg/test')
 
     return parser
 
