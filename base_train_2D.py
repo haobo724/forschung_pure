@@ -60,6 +60,7 @@ class BasetRAIN(pl.LightningModule):
                     picked_channel = pred[idx,...].argmax(dim=-1)
                     cords = np.argwhere(picked_channel.cpu().numpy() == z)
                     realcord = []
+                    #如果在原groundtruth里是背景才会修改，不是不改
                     for cord in cords:
                         if y_copy[idx,0,cord[0], cord[1]] == 0:
                             realcord.append(cord)
@@ -69,6 +70,7 @@ class BasetRAIN(pl.LightningModule):
                     #todo:如果是肺，右肺（label=3）再来一遍
                     if z ==2:
                         cord_zusatz=np.argwhere(picked_channel.cpu().numpy() == z+1)
+                        # realcord清空
                         realcord = []
                         for cord in cord_zusatz:
                             if y_copy[idx, 0, cord[0], cord[1]] == 0:
