@@ -208,17 +208,17 @@ class BasetRAIN(pl.LightningModule):
             print(f'[INFO] Adam will be used ,lr = {self.lr}')
             # return torch.optim.Adam(self.parameters(), lr=self.lr)
             optimizer=torch.optim.Adam(self.parameters(), lr=self.lr)
-            # return optimizer
+            return optimizer
 
-            lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2,mode='max', factor=0.9, verbose=True)
-            scheduler = {
-                'scheduler': lr_scheduler,
-                'reduce_on_plateau': True,
-                # val_checkpoint_on is val_loss passed in as checkpoint_on
-                'monitor': 'avg_iousummean'
-            }
-
-            return [optimizer], [scheduler]
+            # lr_scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, patience=2,mode='max', factor=0.9, verbose=True)
+            # scheduler = {
+            #     'scheduler': lr_scheduler,
+            #     'reduce_on_plateau': True,
+            #     # val_checkpoint_on is val_loss passed in as checkpoint_on
+            #     'monitor': 'avg_iousummean'
+            # }
+            #
+            # return [optimizer], [scheduler]
         else:
             print(f'[INFO] SGD will be used ,lr = {self.lr}')
             optimizer= torch.optim.SGD(self.parameters(), lr=self.lr,momentum=0.9)
