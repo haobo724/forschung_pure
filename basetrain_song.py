@@ -104,7 +104,7 @@ def cli_main():
                                  batch_size=args.batch_size,
                                  mode=args.datasetmode)
 
-    dm.setup(stage='fit')
+    # dm.setup(stage='fit')
 
     # training
     #

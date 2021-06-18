@@ -3,7 +3,6 @@ import sys
 
 import matplotlib.pyplot as plt
 import torch
-import logging
 import numpy as np
 import pytorch_lightning as pl
 from torchmetrics.functional import dice_score
@@ -89,7 +88,7 @@ class BasetRAIN(pl.LightningModule):
 
         x, y = batch["image"], batch["label"]
         # shape = [batch, channel, w, h]
-        z_bactch= batch["leaky"]
+        # z_bactch= batch["leaky"]
         pred = self(x)
         y_copy = y.clone()
         # if self.modifiy_label_ON:
@@ -173,6 +172,7 @@ class BasetRAIN(pl.LightningModule):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         # self.train_logger.info("Training epoch {} ends".format(self.current_epoch))
         self.log('train/loss', avg_loss)
+
     def validation_epoch_end(self, outputs):
 
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()

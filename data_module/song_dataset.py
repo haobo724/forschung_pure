@@ -1,17 +1,12 @@
 #test_dataloader 等是pl.module的默认hook
 
 import data_module.custom_transform as custom_transform
-import os
 import pytorch_lightning as pl
-import logging
 import monai.transforms as mxform
 from monai.data.utils import list_data_collate
 import numpy as np
-import monai
 from torch.utils.data import DataLoader
 import torch
-import glob
-from abc import abstractmethod
 from ds import climain
 '''
 Some information about the date:
@@ -131,7 +126,7 @@ class Song_dataset_2d_with_CacheDataloder(pl.LightningDataModule):
 
     def train_dataloader(self,cache=None):
 
-        train_loader = monai.data.DataLoader(
+        train_loader = DataLoader(
             self.train_ds,
             shuffle=True,
             batch_size=self.batch_size,
@@ -145,7 +140,7 @@ class Song_dataset_2d_with_CacheDataloder(pl.LightningDataModule):
     def val_dataloader(self,cache=None):
 
 
-        val_loader =  monai.data.DataLoader(
+        val_loader =  DataLoader(
             dataset=self.val_ds,
             batch_size=8,
             num_workers=self.worker,
