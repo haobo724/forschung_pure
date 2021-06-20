@@ -6,6 +6,7 @@ import pytorch_lightning as pl
 
 # Model import
 from models.BasicUnet import BasicUnet
+from models.Unet_song import UNET
 
 # Loss import
 from loss import CELoss,DiceLoss
@@ -29,7 +30,8 @@ class benchmark_unet_2d(BasetRAIN):
     def __init__(self, hparams):
         super().__init__(hparams)
 
-        self.model = BasicUnet(in_channels=1, out_channels=4, nfilters=32).cuda()
+        # self.model = BasicUnet(in_channels=1, out_channels=4, nfilters=32).cuda()
+        self.model = UNET(in_channels=1, out_channels=4).cuda()
         weights = [0.5, 2.0, 1.0, 1.0]
         if hparams['loss']=='CE':
             self.loss = CELoss(weight=weights)

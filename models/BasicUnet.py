@@ -20,21 +20,6 @@ class ConvBlock(nn.Module):
         return self.double_conv(x)
 
 
-class ConvBlock3D(nn.Module):
-    "...-> conv -> BN -> relu -> conv -> BN -> relu ..."
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
-        self.double_conv = nn.Sequential(
-            nn.Conv3d(in_channels, out_channels, kernel_size=3, padding=1),
-            nn.BatchNorm3d(out_channels),
-            nn.ReLU(inplace=True),
-            nn.Conv3d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.BatchNorm3d(out_channels),
-            nn.ReLU(inplace=True)
-        )
-
-    def forward(self, x):
-        return self.double_conv(x)
 
 
 class DownBlock(nn.Module):
@@ -56,17 +41,6 @@ class DownBlock(nn.Module):
         return self.pooling(x)
 
 
-class DownBlock3D(nn.Module):
-    def __init__(self, in_channels, out_channels) -> None:
-        super().__init__()
-        self.conv_block = ConvBlock3D(in_channels, out_channels)
-        self.pooling = nn.MaxPool3d(kernel_size=2, stride=2)
-        self.skip_tensor = None
-
-    def forward(self, x):
-        x = self.conv_block(x)
-        self.skip_tensor = x
-        return self.pooling(x)
 
 
 class UpBlock(nn.Module):
@@ -91,26 +65,6 @@ class UpBlock(nn.Module):
         return self.conv_block(x)
 
 
-class UpBlock3D(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
-        self.up_conv = nn.ConvTranspose3d(in_channels, in_channels // 2, kernel_size=2, stride=2)
-        self.conv_block = ConvBlock3D(in_channels, out_channels)
-    
-    def forward(self, x, y):
-        x = self.up_conv(x)
-
-        x_left = (y.size()[3] - x.size()[3]) // 2
-        x_right = y.size()[3] - x.size()[3] - x_left
-        y_left = (y.size()[2] - x.size()[2]) // 2
-        y_right = y.size()[2] - x.size()[2] - y_left
-        z_left = (y.size()[4] - x.size()[4]) // 2
-        z_right = y.size()[4] - x.size()[4] - z_left
-
-        x = torch.nn.functional.pad(x, [z_left, z_right, y_left, y_right, x_left, x_right])
-        x = torch.cat([x, y], dim=1)
-
-        return self.conv_block(x)
 
 
 class BasicUnet(nn.Module):
@@ -147,7 +101,7 @@ class BasicUnet(nn.Module):
             )
             pre_nfilters = pre_nfilters // 2
         self.out_conv = nn.Conv2d(pre_nfilters, self.out_channels, kernel_size=1)
-
+        self.init_weights()
     def forward(self, x):
         cache = []
         for down in self.encoder_path:
@@ -161,59 +115,18 @@ class BasicUnet(nn.Module):
 
         return self.out_conv(x)
 
-    def export_config(self):
-        return self.config_kwarg
-
-
-class BasicUnet3D(nn.Module):
-    def __init__(self, **kwargs):
-        # some instructions here
-        super().__init__()
-
-        self.config_kwarg = kwargs
-        self.depth = kwargs.get('depth', 4)
-        self.nfilters = kwargs.get('nfilters', 32)
-        self.in_channels = kwargs.get('in_channels', 1)
-        self.out_channels = kwargs.get('out_channels', 4)
-
-        # encoder path
-        self.encoder_path = nn.ModuleList()
-        self.encoder_path.append(DownBlock3D(self.in_channels, self.nfilters))
-        pre_nfilters = self.nfilters
-        for i in range(self.depth - 2):
-            self.encoder_path.append(
-                DownBlock3D(pre_nfilters, 2 * pre_nfilters)
-            )
-            pre_nfilters = 2 * pre_nfilters
-
-        # bottom
-        self.bottom_block = ConvBlock3D(pre_nfilters, 2*pre_nfilters)
-        pre_nfilters = 2 * pre_nfilters
-
-        # decoder path
-        self.decoder_path = nn.ModuleList()
-        for i in range(self.depth - 1):
-            self.decoder_path.append(
-                UpBlock3D(pre_nfilters, pre_nfilters // 2)
-            )
-            pre_nfilters = pre_nfilters // 2
-        self.out_conv = nn.Conv3d(pre_nfilters, self.out_channels, kernel_size=1)
-
-    def forward(self, x):
-        cache = []
-        for down in self.encoder_path:
-            x = down(x)
-            cache.append(down.skip_tensor)
-
-        x = self.bottom_block(x)
-
-        for up in self.decoder_path:
-            x = up(x, cache.pop())
-
-        return self.out_conv(x)
+    def init_weights(self):
+        for m in self.modules():
+            if isinstance(m,nn.Conv2d):
+                nn.init.kaiming_uniform_(m.weight)
+            elif isinstance(m,nn.BatchNorm2d):
+                nn.init.constant_(m.weight,1)
+                nn.init.constant_(m.bias,0)
 
     def export_config(self):
         return self.config_kwarg
+
+
 
 
 if __name__ == '__main__':
@@ -224,13 +137,13 @@ if __name__ == '__main__':
         'nfilters': 32
     }
     # model = BasicUnet(**config)
-    model = BasicUnet3D(**config)
+    model = BasicUnet(**config)
     # print(model)
     print(model.export_config())
 
     # model2 = BasicUnet(**model.export_config())
     # print(model2)
 
-    x = torch.rand(1, 1, 128, 128, 16)
+    x = torch.rand(1, 1, 128, 128)
     y = model(x)
     print(y.shape)
