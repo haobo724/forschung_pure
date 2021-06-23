@@ -101,7 +101,7 @@ class BasicUnet(nn.Module):
             )
             pre_nfilters = pre_nfilters // 2
         self.out_conv = nn.Conv2d(pre_nfilters, self.out_channels, kernel_size=1)
-        self.init_weights()
+        # self.init_weights()
     def forward(self, x):
         cache = []
         for down in self.encoder_path:
