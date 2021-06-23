@@ -307,7 +307,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
 
     if dataset_mode ==5:
         print(f'[INFO] TEST Dataset_mode: {dataset_mode}')
-        fulllabeled_name_sub_T=patient_name[30:34]
+        fulllabeled_name_sub_T=patient_name[:4]
         # if len(fulllabeled_name_sub_T)==1:
         # fulllabeled_name_sub_T=[fulllabeled_name_sub_T]
         Fulllabel_str_list_T, Fulllabel_str_list_mask_T = leakylabel_generator(img_list, mask_list, fulllabeled_name_sub_T,
