@@ -279,10 +279,10 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
     patient_name=sorted(patient_name)
 
     if dataset_mode ==7 or dataset_mode ==8:
-        NoLiver_name = patient_name[10:13]  # 10
-        NoLiver_name_V = patient_name[13:18]  # 10
-        NoLung_name = patient_name[18:21]  # 10
-        NoLung_name_V = patient_name[21:26]  # 10
+        NoLiver_name = patient_name[10:18]  # 10
+        NoLiver_name_V = patient_name[18:20]  # 10
+        NoLung_name = patient_name[20:28]  # 10
+        NoLung_name_V = patient_name[28:30]  # 10
         # TODO: 根据病人名字分割出来三组list，保存的是路径
 
         Nolung_str_list, Nolung_str_list_mask = leakylabel_generator(img_list, mask_list,
@@ -307,7 +307,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
 
     if dataset_mode ==5:
         print(f'[INFO] TEST Dataset_mode: {dataset_mode}')
-        fulllabeled_name_sub_T=patient_name[:4]
+        fulllabeled_name_sub_T=patient_name[30:34]
         # if len(fulllabeled_name_sub_T)==1:
         # fulllabeled_name_sub_T=[fulllabeled_name_sub_T]
         Fulllabel_str_list_T, Fulllabel_str_list_mask_T = leakylabel_generator(img_list, mask_list, fulllabeled_name_sub_T,
@@ -371,7 +371,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
 
 
         fulllabeled_name_sub_T=patient_name[:24] if dataset_mode ==1 else patient_name[:8]
-        fulllabeled_name_sub_V=patient_name[24:30] if dataset_mode ==1 else patient_name[8:10]
+        fulllabeled_name_sub_V=patient_name[24:26] if dataset_mode ==1 else patient_name[8:10]
         
 
         Fulllabel_str_list_T, Fulllabel_str_list_mask_T = leakylabel_generator(img_list, mask_list, fulllabeled_name_sub_T,
