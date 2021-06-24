@@ -1,6 +1,6 @@
 import os
 import sys
-
+import pickle
 import matplotlib.pyplot as plt
 import torch
 import numpy as np
@@ -20,7 +20,8 @@ class BasetRAIN(pl.LightningModule):
         self.lr=hparams['lr']
         self.batch_size=hparams['batch_size']
         self.opt=hparams['opt']
-        self.lr_scheduler =None
+        self.lungrecord =np.empty((1,0))
+
         # self.train_logger = logging.getLogger(__name__)
         self.validation_recall = pl.metrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_precision = pl.metrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
@@ -237,6 +238,19 @@ class BasetRAIN(pl.LightningModule):
             #
             # return [optimizer], [scheduler]
 
+    def show(self,x,picked_channel,y,index):
+        fig, axs = plt.subplots(1,4)
+
+        axs[0].imshow(picked_channel[index,...].cpu() *0.5+x[index,0,...].cpu() *0.5)
+        axs[1].imshow(picked_channel[index,...].cpu() )
+        axs[2].imshow(x[index,0,...].cpu() )
+        axs[3].imshow(y[index,0,...].cpu() )
+        axs[0].set_title('blend')
+        axs[1].set_title('result')
+        axs[2].set_title('img')
+        axs[3].set_title('ground truth')
+        plt.show()
+
     def test_step(self, batch, batch_idx, dataset_idx=None):
         x, y = batch['image'], batch['label']
         y_hat = self(x)
@@ -244,32 +258,29 @@ class BasetRAIN(pl.LightningModule):
         pred=torch.softmax(y_hat,dim=1)
         picked_channel=pred.argmax(dim=1)
         iou_individual=0
+        lung_record=np.zeros((1,picked_channel.shape[0]))
         for index in range(picked_channel.shape[0]):
-            iou_individual += self.validation_IOU2(picked_channel[index,...], y[index,...].long())
+            tmp=self.validation_IOU2(picked_channel[index,...], y[index,...].long())
+
+            if torch.max(y[index,...])==0 and torch.max(picked_channel[index,...])!=0 :
+                if torch.max(picked_channel[index,...])==1:
+                    lung_record[0,index]=1
+                elif torch.max(picked_channel[index,...])==2:
+                    lung_record[0,index]=2
+                elif torch.max(picked_channel[index,...])==3:
+                    lung_record[0,index]=3
+                # self.show(x, picked_channel, y, index)
+            iou_individual += tmp
+        self.lungrecord = np.append(self.lungrecord, lung_record, axis=1)
+
         iou_individual = iou_individual/picked_channel.shape[0]
         iou_summean =torch.sum(iou_individual * self.weights.cuda())
 
         # dice=dice_score(torch.softmax(y_hat, dim=1),y.squeeze(1).long(),reduction='none',bg=True,no_fg_score=1)[:4]
-        show=0
-        if show:
-            for index in range(x.shape[0]):
-                fig, axs = plt.subplots(1,4)
 
-                axs[0].imshow(picked_channel[index,...].cpu() *0.5+x[index,0,...].cpu() *0.5)
-                axs[1].imshow(picked_channel[index,...].cpu() )
-                axs[2].imshow(x[index,0,...].cpu() )
-                axs[3].imshow(y[index,0,...].cpu() )
-                axs[0].set_title('blend')
-                axs[1].set_title('result')
-                axs[2].set_title('img')
-                axs[3].set_title('ground truth')
-                plt.show()
 
         # loss = self.loss.forward(y_hat, y)
-        # self.log("iou_individual_bg", iou_individual[0], on_step=False, logger=True)
-        # self.log("iou_individual_liver", iou_individual[1], on_step=False,  logger=True)
-        # self.log("iou_individual_left_lung", iou_individual[2], on_step=False,logger=True)
-        # self.log("iou_individual_right_lung", iou_individual[3], on_step=False, logger=True)
+
 
         returndic={}
 
@@ -294,11 +305,14 @@ class BasetRAIN(pl.LightningModule):
         self.log('valid/avg_iou_individual_left_lung', avg_iou_individual_left_lung, logger=True)
         self.log('valid/avg_iou_individual_right_lung', avg_iou_individual_right_lung, logger=True)
 
-        # self.train_logger.info("test epoch {} ends,iou={},{},{},{}".format(self.current_epoch, avg_iou_individual_bg,
-        #                                                                    avg_iou_individual_liver,
-        #                                                                    avg_iou_individual_left_lung,
-        #                                                                    avg_iou_individual_right_lung))
-
+    def on_test_end(self) -> None:
+        if os.path.exists("lungrecord.pkl"):
+            print('del..')
+            os.remove("lungrecord.pkl")
+        with open("lungrecord.pkl", 'wb') as f:
+            pickle.dump(self.lungrecord, f)
+        print(self.lungrecord.shape)
+        print('test end')
 
 
 

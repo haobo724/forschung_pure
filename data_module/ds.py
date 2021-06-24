@@ -31,7 +31,6 @@ import numpy as np
 import re
 import monai.transforms as mxform
 import data_module.custom_transform as custom_transform
-import logging
 from monai.data.utils import list_data_collate
 
 def leakylabel_generator(img_list, mask_list, leakylabellist,root_str):
@@ -279,6 +278,8 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
     patient_name=sorted(patient_name)
 
     if dataset_mode ==7 or dataset_mode ==8:
+        print(f'[INFO] Dataset_mode: {dataset_mode}')
+
         NoLiver_name = patient_name[10:18]  # 10
         NoLiver_name_V = patient_name[18:20]  # 10
         NoLung_name = patient_name[20:28]  # 10
@@ -307,9 +308,8 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
 
     if dataset_mode ==5:
         print(f'[INFO] TEST Dataset_mode: {dataset_mode}')
-        fulllabeled_name_sub_T=patient_name[:4]
-        # if len(fulllabeled_name_sub_T)==1:
-        # fulllabeled_name_sub_T=[fulllabeled_name_sub_T]
+        fulllabeled_name_sub_T=patient_name[30:35]
+
         Fulllabel_str_list_T, Fulllabel_str_list_mask_T = leakylabel_generator(img_list, mask_list, fulllabeled_name_sub_T,
                                                                                root_str)
         keys = ("image", "label", "leaky")
@@ -367,11 +367,9 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
 
     if dataset_mode ==1 or dataset_mode==2:
         print(f'[INFO] Dataset_mode: {dataset_mode}')
-        print(f'[INFO] ALL labeled patients --->30') if dataset_mode == 1 else logging.info(f'[INFO] ALL labeled patients --->10')
 
-
-        fulllabeled_name_sub_T=patient_name[:24] if dataset_mode ==1 else patient_name[:8]
-        fulllabeled_name_sub_V=patient_name[24:26] if dataset_mode ==1 else patient_name[8:10]
+        fulllabeled_name_sub_T=patient_name[:8]+patient_name[10:18]+patient_name[20:28] if dataset_mode ==1 else patient_name[:8]
+        fulllabeled_name_sub_V=patient_name[18:20]+patient_name[28:30]
         
 
         Fulllabel_str_list_T, Fulllabel_str_list_mask_T = leakylabel_generator(img_list, mask_list, fulllabeled_name_sub_T,
@@ -408,9 +406,6 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
 
     if dataset_mode ==3 or dataset_mode==4:
         print(f'[INFO] Dataset_mode: {dataset_mode}')
-        print(f'[INFO] MODE 3: ALL labeled patients ---10 + NoLiver ---10 + NoLung ---10 --->30') if dataset_mode == 3 else print(
-            f'  [INFO] MODE 4: ALL labeled patients ---10 + NoLiver ---10 + NoLung ---10 --->30 with modifiy label/trainstep')
-
         fulllabeled_name_sub_T = patient_name[:8]  # 前十个
         fulllabeled_name_sub_V = patient_name[8:10]  # 前十个
 

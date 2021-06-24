@@ -23,7 +23,7 @@ label_list = ['bg', 'liver', 'left_lung', 'right_lung']
 # Base class of Visceral_dataset_2d/3d
 # @pl.data_loader
 class Song_dataset_2d_with_CacheDataloder(pl.LightningDataModule):
-    def __init__(self, data_folder, worker, batch_size,mode, **kwargs):
+    def __init__(self, data_folder, worker, batch_size, mode, **kwargs):
         super().__init__()
         self.cache_dir = None
         self.train_ds=None
@@ -111,17 +111,19 @@ class Song_dataset_2d_with_CacheDataloder(pl.LightningDataModule):
                                                                                        Input_worker=self.worker,
                                                                                        mode='val',
                                                                                        dataset_mode=self.mode)
+
+        #val_ds is always 4 patients
         #todo: all fully  1 2
-        if self.mode==1 or self.mode==2 or self.mode==6:
-            self.train_ds=train_ds_alllabel
-            self.val_ds=val_ds_alllabel
+        if self.mode == 1 or self.mode == 2 or self.mode == 6:
+            self.train_ds = train_ds_alllabel
+            self.val_ds = val_ds_alllabel
         #todo: only leaky 7
-        elif self.mode==7 or self.mode==8:
-            self.val_ds =  val_Nolung_patient_DS + val_NoLiver_patient_DS
-            self.train_ds =  train_Nolung_patient_DS + train_NoLiver_patient_DS
+        elif self.mode == 7 or self.mode == 8:
+            self.val_ds = val_Nolung_patient_DS + val_NoLiver_patient_DS
+            self.train_ds = train_Nolung_patient_DS + train_NoLiver_patient_DS
         #todo: fully+ leaky 3 4
         else:
-            self.val_ds=val_ds_alllabel+val_Nolung_patient_DS+val_NoLiver_patient_DS
+            self.val_ds=val_Nolung_patient_DS+val_NoLiver_patient_DS
             self.train_ds = train_ds_alllabel+train_Nolung_patient_DS+ train_NoLiver_patient_DS
 
     def train_dataloader(self,cache=None):
