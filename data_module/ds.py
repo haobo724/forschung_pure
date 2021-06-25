@@ -349,7 +349,13 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
                 data=Alllabel_patient_train,
                 transform=get_xform(mode=mode, leaky='liver'),
             )
-            return train_ALLlabel_patient_DS, [], []
+
+            train_ALLlabel_patient_DS2 = monai.data.Dataset(
+                data=Alllabel_patient_train,
+                transform=get_xform(mode=mode, leaky='lung'),
+            )
+
+            return train_ALLlabel_patient_DS+train_ALLlabel_patient_DS2, [], []
         else:
             Alllabel_patient_val = [
                 {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
