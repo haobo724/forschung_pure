@@ -8,15 +8,15 @@
 +--------+--------------+-----------------------+----------------------+-----+----------+-------+----------------+
 |        | Full Labeled | Labeled without Liver | Labeled without lung | Sum | Modified | Epoch | Misslabel Rate |
 +--------+--------------+-----------------------+----------------------+-----+----------+-------+----------------+
-| Mode 1 |      18      |           0           |           0          |  18 |   False  | 30    |       0%       |
+| Mode 1 |      24     |           0           |           0          |  24 |   False  | 75    |       0%       |
 +--------+--------------+-----------------------+----------------------+-----+----------+-------+----------------+
-| Mode 2 |       9      |           0           |           0          |  6  |   False  | 15    |       0%       |
+| Mode 2 |       8     |           0           |           0          |  8  |   False  | 75    |       0%       |
 +--------+--------------+-----------------------+----------------------+-----+----------+-------+----------------+
-| Mode 3 |       6      |           6           |           6          |  12 |   False  | 30    |       33%      |
+| Mode 3 |       8      |           8           |           8          |  24 |   False  | 75    |       33%      |
 +--------+--------------+-----------------------+----------------------+-----+----------+-------+----------------+
-| Mode 4 |       6      |           6           |           6          |  18 |   True   | 30    |       33%      |
+| Mode 4 |       8      |           8           |           8          |  24 |   True   | 75    |       33%      |
 +--------+--------------+-----------------------+----------------------+-----+----------+-------+----------------+
-| Mode 7（8） |       0      |           6           |           6          |  12 |   False  | 30    |       50%      |
+| Mode 7（8） |       0      |           8           |           8          |  16 |   False  | 75    |       50%      |
 +--------+--------------+-----------------------+----------------------+-----+----------+-------+----------------+
 
 
@@ -32,7 +32,7 @@ import re
 import monai.transforms as mxform
 import data_module.custom_transform as custom_transform
 from monai.data.utils import list_data_collate
-
+from torch.utils.data import DataLoader
 def leakylabel_generator(img_list, mask_list, leakylabellist,root_str):
     '''
     input:装着所有img和mask名字的list，被指定为缺省数据的病人名字和mask和img的路径
@@ -330,15 +330,14 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
     if dataset_mode ==6:
         print(f'[INFO] New Dataset_mode: {dataset_mode}')
         print(f'TEST CacheDataset')
-        fulllabeled_name_sub_T =[ patient_name[0]]  #
-        fulllabeled_name_sub_V = [patient_name[2]] #
+        fulllabeled_name_sub_T =[ patient_name[1]]  #
+        fulllabeled_name_sub_V = [patient_name[1]] #
 
         Fulllabel_str_list_T, Fulllabel_str_list_mask_T = leakylabel_generator(img_list, mask_list,
                                                                            fulllabeled_name_sub_T, root_str)
 
         Fulllabel_str_list_V, Fulllabel_str_list_mask_V = leakylabel_generator(img_list, mask_list,
                                                                                fulllabeled_name_sub_V, root_str)
-
         keys = ("image", "label", "leaky")
 
         if mode == 'train':
@@ -346,10 +345,9 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
                 {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
                 zip(Fulllabel_str_list_T, Fulllabel_str_list_mask_T)
             ]
-            train_ALLlabel_patient_DS = monai.data.CacheDataset(
+            train_ALLlabel_patient_DS = monai.data.Dataset(
                 data=Alllabel_patient_train,
-                transform=get_xform(mode=mode, leaky='all'),
-                num_workers=Input_worker
+                transform=get_xform(mode=mode, leaky='liver'),
             )
             return train_ALLlabel_patient_DS, [], []
         else:
@@ -357,10 +355,9 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
                 {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
                 zip(Fulllabel_str_list_V, Fulllabel_str_list_mask_V)
             ]
-            val_ALLlabel_patient_DS = monai.data.CacheDataset(
+            val_ALLlabel_patient_DS = monai.data.Dataset(
                 data=Alllabel_patient_val,
                 transform=get_xform(mode=mode, leaky='all'),
-                num_workers=Input_worker
 
             )
             return val_ALLlabel_patient_DS, [], []
@@ -447,30 +444,49 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',Input_worker=4
 
 
 def test():
-    train_ds_alllabel, train_Nolung_patient_DS, train_NoLiver_patient_DS=climain(mode='train',dataset_mode=7)
-    train_ds = train_Nolung_patient_DS + train_NoLiver_patient_DS
+    train_ds_alllabel, train_Nolung_patient_DS, train_NoLiver_patient_DS=climain(mode='train',dataset_mode=6)
+    train_ds = train_ds_alllabel
+
+    val_ds_alllabel, val_Nolung_patient_DS, val_NoLiver_patient_DS = climain(mode='val', dataset_mode=6)
+    val_ds = val_ds_alllabel
+
     bs=4
-    train_loader = monai.data.DataLoader(
+    train_loader = DataLoader(
         train_ds,
-        shuffle=True,
+        shuffle=False,
         batch_size=bs,
         num_workers=4,
-        pin_memory=True,
+        pin_memory=False,
         collate_fn=list_data_collate
 
     )
+    val_loader = DataLoader(
+        val_ds,
+        shuffle=False,
+        batch_size=bs,
+        num_workers=4,
+        pin_memory=False,
+        collate_fn=list_data_collate
 
-    for idx,data in enumerate(train_loader):
+    )
+    idx=0
+    for data,vdata in zip (train_loader,val_loader):
+
+        idx+=1
         x=data["image"]
         y=data["label"]
         z=data["leaky"]
+        xv = vdata["image"]
+        yv = vdata["label"]
+        zv= vdata["leaky"]
 
-        fig, axs = plt.subplots(2, bs)
-        for i in range(bs):
-            axs[0,i].imshow(y[i,0,...])
-            axs[0,i].set_title(f'{z[i]}')
-            axs[1,i].imshow(x[i,0,...])
-            axs[1,i].set_title(f'{z[i]}')
-        plt.show()
+        if idx>38:
+            fig, axs = plt.subplots(2, bs)
+            for i in range(bs):
+                axs[0,i].imshow(yv[i,0,...],cmap='Blues')
+                axs[0,i].set_title(f'Original Ground Truth')
+                axs[1,i].imshow(y[i,0,...],cmap='Blues')
+                axs[1,i].set_title(f'Simulate non-fully annotated dataset')
+            plt.show()
 if __name__ == "__main__":
     test()

@@ -6,24 +6,27 @@ import matplotlib.pyplot as plt
 from collections import Counter
 
 
+a=torch.randn((4,512,512))
+c=torch.argmax(a,dim=0)
+print(c.shape)
 
-def load(path=None):
-    print("loaded")
-    with open("./lungrecord.pkl", 'rb') as f:
-        tmp = pickle.load(f)
-    return tmp
-a=np.squeeze(load())
-b=np.zeros_like(a)
-c=np.zeros_like(a)
-
-# cmap=
-result = Counter(a)
-print(result)
-x=np.arange(a.shape[0])
-plt.scatter( x,a,c=a.astype(np.uint8), s=1)
-plt.colorbar()
-
-plt.show()
+# def load(path=None):
+#     print("loaded")
+#     with open("./lungrecord.pkl", 'rb') as f:
+#         tmp = pickle.load(f)
+#     return tmp
+# a=np.squeeze(load())
+# b=np.zeros_like(a)
+# c=np.zeros_like(a)
+#
+# # cmap=
+# result = Counter(a)
+# print(result)
+# x=np.arange(a.shape[0])
+# plt.scatter( x,a,c=a.astype(np.uint8), s=1)
+# plt.colorbar()
+#
+# plt.show()
 
 
 

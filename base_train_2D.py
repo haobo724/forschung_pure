@@ -26,7 +26,7 @@ class BasetRAIN(pl.LightningModule):
         self.validation_recall = pl.metrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_precision = pl.metrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_IOU2 = pl.metrics.IoU( num_classes=4,absent_score=1,reduction='none')
-        if hparams['datasetmode']== 4 or hparams['datasetmode']==8:
+        if hparams['datasetmode']== 6 or hparams['datasetmode']==8:
             self.modifiy_label_ON=True
             print(f'[INFO] modifiy_label_ON={self.modifiy_label_ON}')
         else:
@@ -55,9 +55,22 @@ class BasetRAIN(pl.LightningModule):
             for idx,z in enumerate(z_bactch):
                 if z != 0:
                     # pred = torch.squeeze(y_hat)
-                    pred = y_hat.permute(0,2, 3, 1)
-                    pred = torch.softmax(pred[idx,...], dim=-1)
-                    picked_channel = pred[idx,...].argmax(dim=-1)
+
+                    # pred = y_hat.clone().permute(0,2, 3, 1)
+                    # print(y_hat.size())
+                    pred = torch.sigmoid(y_hat.clone()[idx,...])
+                    # print(pred.size())
+                    #TODO:!!!!!!!!!!!!!!!!!!!!!!!!!!!!WOCAO
+                    # p2=pred.argmax(dim=0)
+                    # print('first',pred.size())
+                    picked_channel = pred.argmax(dim=0)
+                    # print('second:',picked_channel.size())
+                    # print(picked_channel.size())
+                    # print(picked_channel)
+                    # picked_channel2 = torch.argmax(pred[idx,...],dim=0)
+                    # print(picked_channel2.size())
+
+
                     cords = np.argwhere(picked_channel.cpu().numpy() == z)
                     realcord = []
                     #如果在原groundtruth里是背景才会修改，不是不改
@@ -78,7 +91,14 @@ class BasetRAIN(pl.LightningModule):
 
                         for cord in realcord:
                             y_copy[idx, 0, cord[0], cord[1]] = z+1
-
+                    # fig, axs = plt.subplots(2, 2)
+                    # print(picked_channel.cpu().detach().numpy().shape)
+                    # for i in range(2):
+                    #     axs[0, i].imshow(picked_channel.cpu().numpy(), cmap='Blues')
+                    #     axs[0, i].set_title(f'Original Ground Truth')
+                    #     axs[1, i].imshow(y_copy[i, 0, ...].cpu().numpy(), cmap='Blues')
+                    #     axs[1, i].set_title(f'Simulate non-fully annotated dataset')
+                    # plt.show()
         loss = self.loss.forward(y_hat, y_copy)
         self.log("loss", loss)
         return {"loss": loss}
