@@ -46,13 +46,15 @@ class BasetRAIN(pl.LightningModule):
             print("lr=",self.lr)
         y_hat = self(x)
         y_copy = y.clone()
+        y_check = y.clone()
+        predlist = []
+
         # print(self.current_epoch)
         if self.modifiy_label_ON:
             for idx,z in enumerate(z_bactch):
-                # print(z)
-                z=int(z)
+
                 if z != 0:
-                    pred = torch.sigmoid(y_hat.clone()[idx,...])
+                    pred = torch.sigmoid(y_hat[idx,...])
                     picked_channel = pred.argmax(dim=0)
                     tmp = torch.where(picked_channel == z)
                     '''
@@ -64,42 +66,52 @@ class BasetRAIN(pl.LightningModule):
                     '''
                     cord_y = tmp[0]
                     cord_x = tmp[1]
-                    realcord = []
-                    #如果在原groundtruth里是背景才会修改，不是不改
-                    for i,j in  zip(cord_y,cord_x):
-                        if y_copy[idx,0,i, j] == 0:
-                            realcord.append([i,j])
 
-                    for cord in realcord:
-                        y_copy[idx,0,cord[0], cord[1]] = z
+                    real_tmp=y[idx, 0, cord_y, cord_x]==0
+                    idxx=torch.where(real_tmp==True)
+
+                    #如果在原groundtruth里是背景才会修改，不是不改
+
+                    realcord_y=cord_y[idxx]
+                    realcord_x=cord_x[idxx]
+
+                    # if torch.max(y_copy[idx,...])!=0:
+                    y_copy[idx, 0,realcord_y,realcord_x]=float(z)
+
 
                     #todo:如果是肺，右肺（label=3）再来一遍
                     if z ==2:
-                        tmp_zusatz=torch.where(picked_channel == z+1)
+                        key=z+1
+                        tmp_zusatz=torch.where(picked_channel == key)
                         cord_y_zusatz = tmp_zusatz[0]
                         cord_x_zusatz = tmp_zusatz[1]
                         # realcord清空
-                        realcord = []
-                        for i, j in zip(cord_y_zusatz, cord_x_zusatz):
-                            if y_copy[idx, 0, i, j] == 0:
-                                realcord.append([i, j])
+                        real_tmp2 = y_copy[idx, 0, cord_y_zusatz, cord_x_zusatz] == 0
+                        idxx2 = torch.where(real_tmp2 == True)
+                        realcord_y2 = cord_y_zusatz[idxx2]
+                        realcord_x2 = cord_x_zusatz[idxx2]
 
-                        for cord in realcord:
-                            y_copy[idx, 0, cord[0], cord[1]] = z+1
-                    # if self.current_epoch>1:
-                    #     fig, axs = plt.subplots(4, 2)
-                    #     for i in range(2):
-                    #         axs[0, i].imshow(picked_channel.cpu().numpy(), cmap='Blues')
-                    #         axs[0, i].set_title(f'{z_bactch[i]}')
-                    #         axs[1, i].imshow(y_copy[i, 0, ...].cpu().numpy(), cmap='Blues')
-                    #         axs[1, i].set_title(f'Simulate non-fully annotated dataset')
-                    #
-                    #         axs[2, i].imshow(y[i, 0, ...].cpu().numpy(), cmap='Blues')
-                    #         axs[2, i].set_title(f'Original Ground Truth')
-                    #
-                    #         axs[3, i].imshow(x[i, 0, ...].cpu().numpy(), cmap='Blues')
-                    #         axs[3, i].set_title(f'Input data')
-                    #     plt.show()
+
+                            # if torch.max(y_copy[idx, ...]) != 0:
+                        y_copy[idx, 0, realcord_y2, realcord_x2] = float(key)
+
+            #     print(picked_channel.shape)
+            #     predlist.append(picked_channel)
+            # if self.current_epoch>-1:
+            #     fig, axs = plt.subplots(4, 2)
+            #     for i in range(2):
+            #         axs[0, i].imshow(predlist[i].cpu().numpy(), cmap='Blues')
+            #         axs[0, i].set_title(f'{z_bactch[i]}')
+            #
+            #         axs[1, i].imshow(y_copy[i, 0, ...].cpu().numpy(), cmap='Blues')
+            #         axs[1, i].set_title(f'Simulate non-fully annotated dataset')
+            #
+            #         axs[2, i].imshow(y[i, 0, ...].cpu().numpy(), cmap='Blues')
+            #         axs[2, i].set_title(f'Original Ground Truth')
+            #
+            #         axs[3, i].imshow(x[i, 0, ...].cpu().numpy(), cmap='Blues')
+            #         axs[3, i].set_title(f'Input data')
+            #     plt.show()
         loss = self.loss.forward(y_hat, y_copy)
         self.log("loss", loss)
         return {"loss": loss}
