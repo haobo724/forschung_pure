@@ -4,20 +4,20 @@ import pickle
 import torchmetrics.functional as f
 import matplotlib.pyplot as plt
 from collections import Counter
-
-
-a=torch.ones((512,512))
-a[0,2]=10
-a[4,2]=10
-
-
-x=[0,4,1,4]
-y=[2,2,4,5]
-
-idx=  (a[x,y]==10)
-i=torch.where(idx==True)
-
-print(i)
+print(0// 8)
+print(0% 8)
+# a=torch.ones((512,512))
+# a[0,2]=10
+# a[4,2]=10
+#
+#
+# x=[0,4,1,4]
+# y=[2,2,4,5]
+#
+# idx=  (a[x,y]==10)
+# i=torch.where(idx==True)
+#
+# print(i)
 
 
 

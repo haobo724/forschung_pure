@@ -41,12 +41,13 @@ class BasetRAIN(pl.LightningModule):
     def training_step(self, batch, batch_idx, dataset_idx=None):
         x, y = batch["image"], batch["label"]
         z_bactch =batch["leaky"]
-        if self.lr != 5e-4:
-            print("wow!")
-            print("lr=",self.lr)
+        lr =self.lr
+        if self.current_epoch % 8 ==0 and self.current_epoch // 8 > 0:
+            self.lr *=0.8
+        if self.lr != lr:
+            print("new lr=",self.lr)
         y_hat = self(x)
         y_copy = y.clone()
-        y_check = y.clone()
         predlist = []
 
         # print(self.current_epoch)
@@ -81,7 +82,7 @@ class BasetRAIN(pl.LightningModule):
 
                     #todo:如果是肺，右肺（label=3）再来一遍
                     if z ==2:
-                        key=z+1
+                        key=z+1.
                         tmp_zusatz=torch.where(picked_channel == key)
                         cord_y_zusatz = tmp_zusatz[0]
                         cord_x_zusatz = tmp_zusatz[1]
@@ -95,23 +96,24 @@ class BasetRAIN(pl.LightningModule):
                             # if torch.max(y_copy[idx, ...]) != 0:
                         y_copy[idx, 0, realcord_y2, realcord_x2] = float(key)
 
-            #     print(picked_channel.shape)
-            #     predlist.append(picked_channel)
-            # if self.current_epoch>-1:
-            #     fig, axs = plt.subplots(4, 2)
-            #     for i in range(2):
-            #         axs[0, i].imshow(predlist[i].cpu().numpy(), cmap='Blues')
-            #         axs[0, i].set_title(f'{z_bactch[i]}')
-            #
-            #         axs[1, i].imshow(y_copy[i, 0, ...].cpu().numpy(), cmap='Blues')
-            #         axs[1, i].set_title(f'Simulate non-fully annotated dataset')
-            #
-            #         axs[2, i].imshow(y[i, 0, ...].cpu().numpy(), cmap='Blues')
-            #         axs[2, i].set_title(f'Original Ground Truth')
-            #
-            #         axs[3, i].imshow(x[i, 0, ...].cpu().numpy(), cmap='Blues')
-            #         axs[3, i].set_title(f'Input data')
-            #     plt.show()
+                print(picked_channel.shape)
+                predlist.append(picked_channel)
+            if self.current_epoch>4:
+                fig, axs = plt.subplots(1, 4)
+                for i in range(1):
+                    axs[0].imshow(predlist[i].cpu().numpy(), cmap='Blues')
+                    if z_bactch[i]==2:
+                        text='Lung'
+                    else:
+                        text='Liver'
+                    axs[0].set_title(f'Missing label={text}')
+                    axs[1].imshow(y[i, 0, ...].cpu().numpy(), cmap='Blues')
+                    axs[1].set_title(f'Original Ground Truth')
+                    axs[2].imshow(y_copy[i, 0, ...].cpu().numpy(), cmap='Blues')
+                    axs[2].set_title(f'New Ground Truth')
+                    axs[3].imshow(x[i, 0, ...].cpu().numpy(), cmap='Blues')
+                    axs[3].set_title(f'Input data')
+                plt.show()
         loss = self.loss.forward(y_hat, y_copy)
         self.log("loss", loss)
         return {"loss": loss}
@@ -125,33 +127,6 @@ class BasetRAIN(pl.LightningModule):
         # z_bactch= batch["leaky"]
         pred = self(x)
         y_copy = y.clone()
-        # if self.modifiy_label_ON:
-        #     for idx, z in enumerate(z_bactch):
-        #         if z != 0:
-        #             # pred = torch.squeeze(y_hat)
-        #             predc = pred.permute(0, 2, 3, 1)
-        #             predc = torch.softmax(predc[idx, ...], dim=-1)
-        #             picked_channel = predc[idx, ...].argmax(dim=-1)
-        #
-        #             cords = np.argwhere(picked_channel.cpu().numpy() == z)
-        #             realcord = []
-        #             for cord in cords:
-        #                 if y_copy[idx, 0, cord[0], cord[1]] == 0:
-        #                     realcord.append(cord)
-        #
-        #             for cord in realcord:
-        #                 y_copy[idx, 0, cord[0], cord[1]] = z
-        #             # todo:如果是肺(label=2，左肺)，右肺（label=3）再来一遍
-        #             if z == 2:
-        #                 cord_zusatz = np.argwhere(picked_channel.cpu().numpy() == z + 1)
-        #                 realcord = []
-        #                 for cord in cord_zusatz:
-        #                     if y_copy[idx, 0, cord[0], cord[1]] == 0:
-        #                         realcord.append(cord)
-        #
-        #                 for cord in realcord:
-        #                     y_copy[idx, 0, cord[0], cord[1]] = z + 1
-        #         #
 
         loss = self.loss.forward(pred, y_copy)
 
