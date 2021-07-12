@@ -486,13 +486,27 @@ def test():
         yv = vdata["label"]
         zv= vdata["leaky"]
 
-        if idx>38:
-            fig, axs = plt.subplots(2, bs)
-            for i in range(bs):
-                axs[0,i].imshow(yv[i,0,...],cmap='Blues')
-                axs[0,i].set_title(f'Original Ground Truth')
-                axs[1,i].imshow(y[i,0,...],cmap='Blues')
-                axs[1,i].set_title(f'Simulate non-fully annotated dataset')
+        if idx>60:
+            # fig, axs = plt.subplots(1, 3)
+            # axs[0].imshow(x[0,0,...],cmap='Blues')
+            # axs[0].set_title(f'Original Input image')
+            # 
+            # axs[1].imshow(yv[0,0,...],cmap='Blues')
+            # axs[1].set_title(f'Original Ground Truth')
+            # axs[2].imshow(y[0,0,...],cmap='Blues')
+            # axs[2].set_title(f'Simulate non-fully annotated dataset')
+            # plt.show()
+            plt.figure()
+            plt.imshow(x[0,0,...],cmap='Blues')
+            plt.title(f'Original Input image')
+            plt.show()
+
+            plt.imshow(yv[0,0,...],cmap='Blues')
+            plt.title(f'Original Ground Truth')
+            plt.show()
+
+            plt.imshow(y[0,0,...],cmap='Blues')
+            plt.title(f'Simulate non-fully annotated dataset')
             plt.show()
 if __name__ == "__main__":
     test()

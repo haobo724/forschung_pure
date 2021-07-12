@@ -8,7 +8,7 @@ import helpers
 from monai.data.utils import pad_list_data_collate
 from ds import climain
 from pytorch_lightning.loggers import TensorBoardLogger
-
+import time
 torch.multiprocessing.set_sharing_strategy('file_system')
 sys.path.append(os.path.dirname(__file__))
 
@@ -50,8 +50,10 @@ def infer():
         collate_fn=pad_list_data_collate
     )
     model = benchmark_unet_2d.load_from_checkpoint(args.ckpt,hparams=vars(args))
-    trainer=pl.Trainer(gpus=-1,logger=logger)
+    start_time=time.time()
+    trainer=pl.Trainer(gpus=-1,logger=logger,precision=16)
     trainer.test(model,infer_loader)
+    print('time:',time.time()-start_time) #time: 91.36657166481018
 
 if __name__ == "__main__":
     # root,dirs,files=os.walk('./mostoolkit/lightning_logs/version_65')

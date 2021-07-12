@@ -3,6 +3,8 @@ import torch
 import pickle
 import torchmetrics.functional as f
 import matplotlib.pyplot as plt
+import pycuda
+import tensorrt as tr
 from collections import Counter
 print(0// 8)
 print(0% 8)

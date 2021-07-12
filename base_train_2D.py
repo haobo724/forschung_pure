@@ -6,7 +6,6 @@ import torch
 import numpy as np
 import pytorch_lightning as pl
 from torchmetrics.functional import dice_score
-
 torch.multiprocessing.set_sharing_strategy('file_system')
 sys.path.append(os.path.dirname(__file__))
 
@@ -41,11 +40,12 @@ class BasetRAIN(pl.LightningModule):
     def training_step(self, batch, batch_idx, dataset_idx=None):
         x, y = batch["image"], batch["label"]
         z_bactch =batch["leaky"]
-        lr =self.lr
-        if self.current_epoch % 8 ==0 and self.current_epoch // 8 > 0:
-            self.lr *=0.8
-        if self.lr != lr:
-            print("new lr=",self.lr)
+        # if self.modifiy_label_ON:
+        #     lr =self.lr
+        #     if self.current_epoch % 8 ==0 and self.current_epoch // 8 > 0:
+        #         self.lr *=0.8
+        #     if self.lr != lr:
+        #         print("new lr=",self.lr)
         y_hat = self(x)
         y_copy = y.clone()
         predlist = []
@@ -53,7 +53,7 @@ class BasetRAIN(pl.LightningModule):
         # print(self.current_epoch)
         if self.modifiy_label_ON:
             for idx,z in enumerate(z_bactch):
-
+                z=float(z)
                 if z != 0:
                     pred = torch.sigmoid(y_hat[idx,...])
                     picked_channel = pred.argmax(dim=0)
@@ -77,11 +77,11 @@ class BasetRAIN(pl.LightningModule):
                     realcord_x=cord_x[idxx]
 
                     # if torch.max(y_copy[idx,...])!=0:
-                    y_copy[idx, 0,realcord_y,realcord_x]=float(z)
+                    y_copy[idx, 0,realcord_y,realcord_x]=z
 
 
                     #todo:如果是肺，右肺（label=3）再来一遍
-                    if z ==2:
+                    if z ==2.:
                         key=z+1.
                         tmp_zusatz=torch.where(picked_channel == key)
                         cord_y_zusatz = tmp_zusatz[0]
@@ -95,25 +95,50 @@ class BasetRAIN(pl.LightningModule):
 
                             # if torch.max(y_copy[idx, ...]) != 0:
                         y_copy[idx, 0, realcord_y2, realcord_x2] = float(key)
+                else:
+                    picked_channel=None
+                    print(z)
+                    raise ValueError('Data error')
 
-                print(picked_channel.shape)
                 predlist.append(picked_channel)
             if self.current_epoch>4:
-                fig, axs = plt.subplots(1, 4)
-                for i in range(1):
-                    axs[0].imshow(predlist[i].cpu().numpy(), cmap='Blues')
-                    if z_bactch[i]==2:
-                        text='Lung'
-                    else:
-                        text='Liver'
-                    axs[0].set_title(f'Missing label={text}')
-                    axs[1].imshow(y[i, 0, ...].cpu().numpy(), cmap='Blues')
-                    axs[1].set_title(f'Original Ground Truth')
-                    axs[2].imshow(y_copy[i, 0, ...].cpu().numpy(), cmap='Blues')
-                    axs[2].set_title(f'New Ground Truth')
-                    axs[3].imshow(x[i, 0, ...].cpu().numpy(), cmap='Blues')
-                    axs[3].set_title(f'Input data')
+                plt.figure()
+                if z_bactch[0] == 2:
+                    text='Lung'
+                else:
+                     text='Liver'
+                plt.imshow(x[0, 0, ...].cpu().numpy(), cmap='Blues')
+                plt.title(f'Input data Missing label={text}')
                 plt.show()
+
+                plt.imshow(predlist[0].cpu().numpy(), cmap='Blues')
+                plt.title(f'Prediction')
+                plt.show()
+
+                plt.imshow(y[0, 0, ...].cpu().numpy(), cmap='Blues')
+                plt.title(f'Original Ground Truth')
+                plt.show()
+
+                plt.imshow(y_copy[0, 0, ...].cpu().numpy(), cmap='Blues')
+                plt.title(f'Simulate non-fully annotated dataset')
+                plt.show()
+
+
+            #     fig, axs = plt.subplots(1, 4)
+            #     for i in range(1):
+            #         axs[0].imshow(predlist[i].cpu().numpy(), cmap='Blues')
+            #         if z_bactch[i]==2:
+            #             text='Lung'
+            #         else:
+            #             text='Liver'
+            #         axs[0].set_title(f'Missing label={text}')
+            #         axs[1].imshow(y[i, 0, ...].cpu().numpy(), cmap='Blues')
+            #         axs[1].set_title(f'Original Ground Truth')
+            #         axs[2].imshow(y_copy[i, 0, ...].cpu().numpy(), cmap='Blues')
+            #         axs[2].set_title(f'New Ground Truth')
+            #         axs[3].imshow(x[i, 0, ...].cpu().numpy(), cmap='Blues')
+            #         axs[3].set_title(f'Input data')
+            #     plt.show()
         loss = self.loss.forward(y_hat, y_copy)
         self.log("loss", loss)
         return {"loss": loss}
@@ -183,7 +208,7 @@ class BasetRAIN(pl.LightningModule):
         self.log('train/loss', avg_loss)
 
     def validation_epoch_end(self, outputs):
-
+        print('len:',len(outputs))
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         avg_recall = torch.stack([x['recall'] for x in outputs]).mean()
         avg_precision = torch.stack([x['precision'] for x in outputs]).mean()
