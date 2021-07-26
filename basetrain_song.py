@@ -37,8 +37,8 @@ class benchmark_unet_2d(BasetRAIN):
             self.loss = CELoss(weight=weights)
             print("CELoss will be used")
         else:
-        # self.loss = monai.losses.DiceLoss(to_onehot_y=True)
-            self.loss= DiceLoss(weight=weights)
+            self.loss = monai.losses.DiceLoss(to_onehot_y=True)
+            # self.loss= DiceLoss(weight=weights)
             print("DiceLoss will be used")
 
         self.save_hyperparameters()

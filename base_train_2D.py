@@ -14,6 +14,7 @@ class BasetRAIN(pl.LightningModule):
         super().__init__()
         self.model = None
         self.loss = None
+        self.lossflag=hparams['loss']
         self.hparams.update(hparams)
         self.weights = torch.tensor([0.1, 2.0, 1.0, 1.0])
         self.lr=hparams['lr']
@@ -46,7 +47,17 @@ class BasetRAIN(pl.LightningModule):
         #         self.lr *=0.8
         #     if self.lr != lr:
         #         print("new lr=",self.lr)
-        y_hat = self(x)
+        if self.lossflag == 'Dice':
+            print('hi dice')
+            y_hat = self(x)
+            print('first:',y_hat.size())
+            y_hat = torch.sigmoid(y_hat)
+            print('after sigmoid:',y_hat.size())
+
+        else:
+            y_hat = self(x)
+
+
         y_copy = y.clone()
         predlist = []
 
@@ -55,8 +66,9 @@ class BasetRAIN(pl.LightningModule):
             for idx,z in enumerate(z_bactch):
                 z=float(z)
                 if z != 0:
-                    pred = torch.sigmoid(y_hat[idx,...])
-                    picked_channel = pred.argmax(dim=0)
+                    # pred = torch.sigmoid(y_hat[idx,...])
+                    # picked_channel = pred.argmax(dim=0)
+                    picked_channel = y_hat[idx,...].argmax(dim=0)
                     tmp = torch.where(picked_channel == z)
                     '''
                    --------------------x 
@@ -101,27 +113,27 @@ class BasetRAIN(pl.LightningModule):
                     raise ValueError('Data error')
 
                 predlist.append(picked_channel)
-            if self.current_epoch>4:
-                plt.figure()
-                if z_bactch[0] == 2:
-                    text='Lung'
-                else:
-                     text='Liver'
-                plt.imshow(x[0, 0, ...].cpu().numpy(), cmap='Blues')
-                plt.title(f'Input data Missing label={text}')
-                plt.show()
-
-                plt.imshow(predlist[0].cpu().numpy(), cmap='Blues')
-                plt.title(f'Prediction')
-                plt.show()
-
-                plt.imshow(y[0, 0, ...].cpu().numpy(), cmap='Blues')
-                plt.title(f'Original Ground Truth')
-                plt.show()
-
-                plt.imshow(y_copy[0, 0, ...].cpu().numpy(), cmap='Blues')
-                plt.title(f'Simulate non-fully annotated dataset')
-                plt.show()
+            # if self.current_epoch>4:
+            #     plt.figure()
+            #     if z_bactch[0] == 2:
+            #         text='Lung'
+            #     else:
+            #          text='Liver'
+            #     plt.imshow(x[0, 0, ...].cpu().numpy(), cmap='Blues')
+            #     plt.title(f'Input data Missing label={text}')
+            #     plt.show()
+            #
+            #     plt.imshow(predlist[0].cpu().numpy(), cmap='Blues')
+            #     plt.title(f'Prediction')
+            #     plt.show()
+            #
+            #     plt.imshow(y[0, 0, ...].cpu().numpy(), cmap='Blues')
+            #     plt.title(f'Original Ground Truth')
+            #     plt.show()
+            #
+            #     plt.imshow(y_copy[0, 0, ...].cpu().numpy(), cmap='Blues')
+            #     plt.title(f'Simulate non-fully annotated dataset')
+            #     plt.show()
 
 
             #     fig, axs = plt.subplots(1, 4)
