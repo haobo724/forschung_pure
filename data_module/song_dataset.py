@@ -1,4 +1,4 @@
-#test_dataloader 等是pl.module的默认hook
+# test_dataloader 等是pl.module的默认hook
 
 import data_module.custom_transform as custom_transform
 import pytorch_lightning as pl
@@ -8,6 +8,7 @@ import numpy as np
 from torch.utils.data import DataLoader
 import torch
 from ds import climain
+
 '''
 Some information about the date:
 pixdim: [0.89, 0.89, 1.5]
@@ -20,19 +21,20 @@ pixdim: [0.89, 0.89, 1.5]
 
 label_list = ['bg', 'liver', 'left_lung', 'right_lung']
 
+
 # Base class of Visceral_dataset_2d/3d
 # @pl.data_loader
 class Song_dataset_2d_with_CacheDataloder(pl.LightningDataModule):
     def __init__(self, data_folder, worker, batch_size, mode, **kwargs):
         super().__init__()
         self.cache_dir = None
-        self.train_ds=None
-        self.val_ds=None
+        self.train_ds = None
+        self.val_ds = None
         self.worker = worker
-        self.datafolder=data_folder
+        self.datafolder = data_folder
 
-        self.batch_size=batch_size
-        self.mode=mode
+        self.batch_size = batch_size
+        self.mode = mode
 
     @staticmethod
     def get_xform(mode="train", keys=("image", "label", "leaky"), leaky=None, leakylist=None):
@@ -100,33 +102,33 @@ class Song_dataset_2d_with_CacheDataloder(pl.LightningDataModule):
     #     "right_lung": 2,
     #     "left_lung": 3,
 
-
     def setup(self, stage: str = None):
-        self.keys = ("image", "label","leaky")
+        self.keys = ("image", "label", "leaky")
 
         train_ds_alllabel, train_Nolung_patient_DS, train_NoLiver_patient_DS = climain(data_path=self.datafolder,
-                                                                                       Input_worker=self.worker,mode='train',
+                                                                                       Input_worker=self.worker,
+                                                                                       mode='train',
                                                                                        dataset_mode=self.mode)
         val_ds_alllabel, val_Nolung_patient_DS, val_NoLiver_patient_DS = climain(data_path=self.datafolder,
-                                                                                       Input_worker=self.worker,
-                                                                                       mode='val',
-                                                                                       dataset_mode=self.mode)
+                                                                                 Input_worker=self.worker,
+                                                                                 mode='val',
+                                                                                 dataset_mode=self.mode)
 
-        #val_ds is always 4 patients
-        #todo: all fully  1 2
+        # val_ds is always 4 patients
+        # todo: all fully  1 2
         if self.mode == 1 or self.mode == 2 or self.mode == 6:
             self.train_ds = train_ds_alllabel
             self.val_ds = val_ds_alllabel
-        #todo: only leaky 7
+        # todo: only leaky 7
         elif self.mode == 7 or self.mode == 8:
             self.val_ds = val_Nolung_patient_DS + val_NoLiver_patient_DS
             self.train_ds = train_Nolung_patient_DS + train_NoLiver_patient_DS
-        #todo: fully+ leaky 3 4
+        # todo: fully+ leaky 3 4
         else:
-            self.val_ds=val_Nolung_patient_DS+val_NoLiver_patient_DS
-            self.train_ds = train_ds_alllabel+train_Nolung_patient_DS+ train_NoLiver_patient_DS
+            self.val_ds = val_Nolung_patient_DS + val_NoLiver_patient_DS
+            self.train_ds = train_ds_alllabel + train_Nolung_patient_DS + train_NoLiver_patient_DS
 
-    def train_dataloader(self,cache=None):
+    def train_dataloader(self, cache=None):
 
         train_loader = DataLoader(
             self.train_ds,
@@ -139,10 +141,9 @@ class Song_dataset_2d_with_CacheDataloder(pl.LightningDataModule):
         )
         return train_loader
 
-    def val_dataloader(self,cache=None):
+    def val_dataloader(self, cache=None):
 
-
-        val_loader =  DataLoader(
+        val_loader = DataLoader(
             dataset=self.val_ds,
             batch_size=8,
             num_workers=self.worker,
@@ -150,9 +151,6 @@ class Song_dataset_2d_with_CacheDataloder(pl.LightningDataModule):
             collate_fn=list_data_collate
         )
         return val_loader
-
-
-
 
 
 if __name__ == "__main__":
@@ -191,7 +189,7 @@ if __name__ == "__main__":
     #     print('Test end')
     #        val_ds,_,_=climain(data_path= self.datafolder,Input_worker=self.worker,mode='train')
 
-        # loader = dm.val_dataloader(cache=False)
+    # loader = dm.val_dataloader(cache=False)
     # for item in loader:
     #     image = item["image"].numpy()
     #     label = item["label"].numpy()

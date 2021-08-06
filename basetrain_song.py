@@ -9,7 +9,7 @@ from models.BasicUnet import BasicUnet
 from models.Unet_song import UNET
 
 # Loss import
-from loss import CELoss,DiceLoss
+from loss import CELoss, DiceLoss
 import monai
 from argparse import ArgumentParser
 
@@ -19,6 +19,7 @@ from pytorch_lightning.callbacks import ModelCheckpoint
 
 from base_train_2D import BasetRAIN
 from pytorch_lightning.loggers import TensorBoardLogger
+
 torch.multiprocessing.set_sharing_strategy('file_system')
 sys.path.append(os.path.dirname(__file__))
 
@@ -32,8 +33,8 @@ class benchmark_unet_2d(BasetRAIN):
 
         self.model = BasicUnet(in_channels=1, out_channels=4, nfilters=32).cuda()
         # self.model = UNET(in_channels=1, out_channels=4).cuda()
-        weights = [0.5, 2.0, 1.0, 1.0]
-        if hparams['loss']=='CE':
+        weights = [0.5, 1.0, 1.0, 1.0]
+        if hparams['loss'] == 'CE':
             self.loss = CELoss(weight=weights)
             print("CELoss will be used")
         else:
@@ -90,11 +91,13 @@ def cli_main():
     if args.resume:
         print("Resume")
         net = benchmark_unet_2d(hparams=vars(args))
-        trainer = pl.Trainer.from_argparse_args(args,precision=16,check_val_every_n_epoch=2,callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger
-                                                ,resume_from_checkpoint=args.lastcheckpoint)
+        trainer = pl.Trainer.from_argparse_args(args, precision=16, check_val_every_n_epoch=2,
+                                                callbacks=[ckpt_callback], num_sanity_val_steps=0, logger=logger
+                                                , resume_from_checkpoint=args.lastcheckpoint)
     else:
         net = benchmark_unet_2d(hparams=vars(args))
-        trainer = pl.Trainer.from_argparse_args(args,precision=16,check_val_every_n_epoch=2,callbacks=[ckpt_callback],num_sanity_val_steps=0,logger=logger)
+        trainer = pl.Trainer.from_argparse_args(args, precision=16, check_val_every_n_epoch=2,
+                                                callbacks=[ckpt_callback], num_sanity_val_steps=0, logger=logger)
 
     logging.info(f'Manual logging starts. Model version: {trainer.logger.version}_mode{args.datasetmode}')
 
@@ -102,9 +105,9 @@ def cli_main():
     logging.info(f'dataset from {args.data_folder}')
 
     dm = Song_dataset_2d_with_CacheDataloder(args.data_folder[0],
-                                 worker=args.worker,
-                                 batch_size=args.batch_size,
-                                 mode=args.datasetmode)
+                                             worker=args.worker,
+                                             batch_size=args.batch_size,
+                                             mode=args.datasetmode)
 
     # dm.setup(stage='fit')
 
@@ -116,11 +119,10 @@ def cli_main():
     # # fig.show()
     # net.lr=lr.suggestion()
     # print('best initial lr:',net.lr)
-    trainer.fit(model=net,datamodule=dm)
+    trainer.fit(model=net, datamodule=dm)
 
     logging.info("!!!!!!!!!!!!!!This is the end of the training!!!!!!!!!!!!!!!!!!!!!!")
     print('THE END')
-
 
 
 if __name__ == "__main__":
