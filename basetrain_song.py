@@ -56,7 +56,6 @@ class benchmark_unet_2d(BasetRAIN):
 def cli_main():
     pl.seed_everything(1234)
     # Get experiment id
-    fname = os.path.splitext(os.path.basename(__file__))[0]
 
     # parse the arguments
     # All pipelines should use python argparser for configuration, so that training is easier on cluster
@@ -66,7 +65,7 @@ def cli_main():
     parser = benchmark_unet_2d.add_model_specific_args(parser)
 
     args = parser.parse_args()
-    print(args.resume)
+    print('resume:',args.resume)
     # --resume
     # False
     # --lastcheckpoint
@@ -123,9 +122,11 @@ def cli_main():
 
     logging.info("!!!!!!!!!!!!!!This is the end of the training!!!!!!!!!!!!!!!!!!!!!!")
     print('THE END')
+    sys.exit()
 
 
 if __name__ == "__main__":
+    
     cli_main()
     #
     # model_infer(models=glob.glob('.\\lightning_logs\\version_650051\\**\\*.ckpt', recursive=True),

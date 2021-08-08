@@ -3,6 +3,8 @@ import sys
 import pickle
 import matplotlib.pyplot as plt
 import torch
+import torchmetrics
+import torchvision
 import numpy as np
 import pytorch_lightning as pl
 from torchmetrics.functional import dice_score
@@ -25,9 +27,10 @@ class BasetRAIN(pl.LightningModule):
         self.lungrecord = np.empty((1, 0))
 
         # self.train_logger = logging.getLogger(__name__)
-        self.validation_recall = pl.metrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
-        self.validation_precision = pl.metrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
-        self.validation_IOU2 = pl.metrics.IoU(num_classes=4, absent_score=1, reduction='none')
+        self.validation_recall = torchmetrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
+        self.validation_precision = torchmetrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
+        self.validation_Accuracy = torchmetrics.Accuracy(num_classes=4)
+        self.validation_IOU2 = torchmetrics.IoU(num_classes=4, absent_score=1, reduction='none')
         if hparams['datasetmode'] == 6 or hparams['datasetmode'] == 8:
             self.modifiy_label_ON = True
             print(f'[INFO] modifiy_label_ON={self.modifiy_label_ON}')
@@ -48,11 +51,8 @@ class BasetRAIN(pl.LightningModule):
         #     if self.lr != lr:
         #         print("new lr=",self.lr)
         if self.lossflag == 'Dice':
-            print('hi dice')
             y_hat = self(x)
-            print('first:', y_hat.size(), y_hat[0, 1, ...])
             y_hat = torch.sigmoid(y_hat)
-            print('after sigmoid:', y_hat.size(), y_hat[0, 1, ...])
 
         else:
             y_hat = self(x)
@@ -180,14 +180,6 @@ class BasetRAIN(pl.LightningModule):
         recall /= picked_channel.shape[0]
         iou_summean = torch.sum(iou_individual * self.weights.cuda())
 
-        # self.log("loss", loss, on_step=False,on_epoch=True,prog_bar=True,logger=True)
-        # self.log("recall", loss, on_step=False,on_epoch=True,prog_bar=True,logger=True)
-        # self.log("precision", precision, on_step=False,on_epoch=True,prog_bar=True,logger=True)
-        # self.log("iou_individual_bg", iou_individual[0], on_step=False,on_epoch=True,prog_bar=True,logger=True)
-        # self.log("iou_individual_liver", iou_individual[1], on_step=False,on_epoch=True,prog_bar=True,logger=True)
-        # self.log("iou_individual_left_lung", iou_individual[2], on_step=False,on_epoch=True,prog_bar=True,logger=True)
-        # self.log("iou_individual_right_lung", iou_individual[3], on_step=False,on_epoch=True,prog_bar=True,logger=True)
-
         returndic = {}
         returndic.setdefault("loss", loss)
         returndic.setdefault("recall", recall)
@@ -287,35 +279,61 @@ class BasetRAIN(pl.LightningModule):
         plt.show()
 
     def test_step(self, batch, batch_idx, dataset_idx=None):
+        '''
+        经测试，用for循环每张图做acc然后手动去平均和直接扔进去效果一样
+        但其他参数不是这样
+        saveimg (batch,colorchannel,h,w)
+        '''
+        def mapping_color(img):
+            color_map = [[255, 0, 0], [255, 255, 0], [0, 0, 255]]
+            for label in [1, 2, 3]:
+                cord_1 = torch.where(result_saved[:, 0, ...] == label)
+                result_saved[:, 0, cord_1[1], cord_1[2]] = color_map[label - 1][0]
+                result_saved[:, 1, cord_1[1], cord_1[2]] = color_map[label - 1][1]
+                result_saved[:, 2, cord_1[1], cord_1[2]] = color_map[label - 1][2]
+            return result_saved
         x, y = batch['image'], batch['label']
-        y_hat = self(x)
-
-        pred = torch.softmax(y_hat, dim=1)
+        y = y.squeeze(1)
+        pred = torch.sigmoid(self(x))
         picked_channel = pred.argmax(dim=1)
         iou_individual = 0
-        lung_record = np.zeros((1, picked_channel.shape[0]))
+        recall = 0
+        precision = 0
+        dice_individual = 0
+        acc = 0
         for index in range(picked_channel.shape[0]):
-            tmp = self.validation_IOU2(picked_channel[index, ...], y[index, ...].long())
+            iou_individual += self.validation_IOU2(picked_channel[index, ...], y[index, ...].long()).float()
+            precision += self.validation_precision(picked_channel[index, ...], y[index, ...].long())
+            acc += self.validation_Accuracy(picked_channel[index, ...], y[index, ...].long())
 
-            if torch.max(y[index, ...]) == 0 and torch.max(picked_channel[index, ...]) != 0:
-                if torch.max(picked_channel[index, ...]) == 1:
-                    lung_record[0, index] = 1
-                elif torch.max(picked_channel[index, ...]) == 2:
-                    lung_record[0, index] = 2
-                elif torch.max(picked_channel[index, ...]) == 3:
-                    lung_record[0, index] = 3
-                # self.show(x, picked_channel, y, index)
-            iou_individual += tmp
-        self.lungrecord = np.append(self.lungrecord, lung_record, axis=1)
-
-        iou_individual = iou_individual / picked_channel.shape[0]
+            dice_individual += dice_score(picked_channel[index, ...], y[index, ...].squeeze(1).long(), reduction='none',
+                                          bg=True, no_fg_score=1)[:4].float()
+            recall += self.validation_recall(picked_channel[index, ...], y[index, ...].long())
+        iou_individual /= picked_channel.shape[0]
+        precision /= picked_channel.shape[0]
+        acc /= picked_channel.shape[0]
+        dice_individual /= picked_channel.shape[0]
+        recall /= picked_channel.shape[0]
         iou_summean = torch.sum(iou_individual * self.weights.cuda())
+        
+        result_saved = torch.cat((picked_channel,y),dim=1)
+        result_saved = torch.unsqueeze(result_saved, dim=1)
 
-        # dice=dice_score(torch.softmax(y_hat, dim=1),y.squeeze(1).long(),reduction='none',bg=True,no_fg_score=1)[:4]
+        result_saved = torch.hstack((result_saved.cpu().float(), result_saved.cpu().float(), result_saved.cpu().float()))
+        result_saved=mapping_color(result_saved)
 
-        # loss = self.loss.forward(y_hat, y)
+
+        folder = "saved_images/"
+
+        torchvision.utils.save_image(
+            result_saved, f"{folder}/infer_result{batch_idx}.jpg"
+        )
+
 
         returndic = {}
+        returndic.setdefault("recall", recall)
+        returndic.setdefault("precision", precision)
+        returndic.setdefault("acc", acc)
 
         returndic.setdefault("iou_individual_bg", iou_individual[0])
         returndic.setdefault("iou_individual_liver", iou_individual[1])
@@ -327,11 +345,13 @@ class BasetRAIN(pl.LightningModule):
 
     def test_epoch_end(self, outputs):
         avg_iou_individual_bg = torch.stack([x['iou_individual_bg'] for x in outputs]).mean()
+        avg_acc = torch.stack([x['acc'] for x in outputs]).mean()
         avg_iou_individual_liver = torch.stack([x['iou_individual_liver'] for x in outputs]).mean()
         avg_iou_individual_left_lung = torch.stack([x['iou_individual_left_lung'] for x in outputs]).mean()
         avg_iou_individual_right_lung = torch.stack([x['iou_individual_right_lung'] for x in outputs]).mean()
         avg_iousummean = torch.stack([x['iou_summean'] for x in outputs]).mean()
         self.log('avg_iousummean', avg_iousummean, logger=True)
+        self.log('acc', avg_acc, logger=True)
         self.log('valid/avg_iou_individual_bg', avg_iou_individual_bg, logger=True)
         self.log('valid/avg_iou_individual_liver', avg_iou_individual_liver, logger=True)
         self.log('valid/avg_iou_individual_left_lung', avg_iou_individual_left_lung, logger=True)
@@ -339,11 +359,11 @@ class BasetRAIN(pl.LightningModule):
 
     def on_test_end(self) -> None:
         if os.path.exists("lungrecord.pkl"):
-            print('del..')
+            print('del..lungrecord.pkl')
             os.remove("lungrecord.pkl")
         with open("lungrecord.pkl", 'wb') as f:
             pickle.dump(self.lungrecord, f)
-        print(self.lungrecord.shape)
+        # print(self.lungrecord.shape)
         print('test end')
 
 

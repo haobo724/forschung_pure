@@ -45,11 +45,13 @@ def infer():
     infer_ds, _, _ = climain(args.data_folder[0], Input_worker=4, mode='test', dataset_mode=5)
     infer_loader = monai.data.DataLoader(
         infer_ds,
-        batch_size=8,
-        num_workers=8,
+        batch_size=4,
+        num_workers=0,
         pin_memory=torch.cuda.is_available(),
         collate_fn=pad_list_data_collate
+
     )
+
     model = benchmark_unet_2d.load_from_checkpoint(args.ckpt, hparams=vars(args))
     start_time = time.time()
     trainer = pl.Trainer(gpus=-1, logger=logger, precision=16)
