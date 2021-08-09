@@ -1,13 +1,17 @@
 import os
 import sys
 import pickle
+
+import cv2
 import matplotlib.pyplot as plt
 import torch
 import torchmetrics
+from measures import calculate_eval_matrix,calculate_dice,calculate_IoU
 import torchvision
 import numpy as np
 import pytorch_lightning as pl
 from torchmetrics.functional import dice_score
+from skimage import color
 
 torch.multiprocessing.set_sharing_strategy('file_system')
 sys.path.append(os.path.dirname(__file__))
@@ -99,7 +103,7 @@ class BasetRAIN(pl.LightningModule):
                         # if torch.max(y_copy[idx, ...]) != 0:
                         y_copy[idx, 0, realcord_y2, realcord_x2] = float(key)
                 else:
-                    if self.datamode=='4':
+                    if self.datamode== 4:
                         continue
                     else:
                         picked_channel = None
@@ -288,12 +292,19 @@ class BasetRAIN(pl.LightningModule):
         def mapping_color(img):
             color_map = [[255, 0, 0], [255, 255, 0], [0, 0, 255]]
             for label in [1, 2, 3]:
-                cord_1 = torch.where(result_saved[:, 0, ...] == label)
-                result_saved[:, 0, cord_1[1], cord_1[2]] = color_map[label - 1][0]
-                result_saved[:, 1, cord_1[1], cord_1[2]] = color_map[label - 1][1]
-                result_saved[:, 2, cord_1[1], cord_1[2]] = color_map[label - 1][2]
-            return result_saved
-
+                cord_1 = torch.where(img[:, 0, ...] == label)
+                img[:, 0, cord_1[1], cord_1[2]] = color_map[label - 1][0]
+                img[:, 1, cord_1[1], cord_1[2]] = color_map[label - 1][1]
+                img[:, 2, cord_1[1], cord_1[2]] = color_map[label - 1][2]
+            return img
+        def label2rgb(img):
+            templist=[]
+            for i in range(img.size()[0]):
+                temp=color.label2rgb(img[i].numpy(),bg_label=0)
+                templist.append(torch.tensor(temp))
+            result=torch.stack((templist),dim=0)
+            result=torch.moveaxis(result,3,1)
+            return result
         x, y = batch['image'], batch['label']
         y = y.squeeze(1)
         pred = torch.sigmoid(self(x))
@@ -305,13 +316,13 @@ class BasetRAIN(pl.LightningModule):
         dice_individual = 0
         acc = 0
         for index in range(picked_channel.shape[0]):
-            iou_individual += self.validation_IOU2(picked_channel[index, ...], y[index, ...].long()).float()
-            precision += self.validation_precision(picked_channel[index, ...], y[index, ...].long())
-            acc += self.validation_Accuracy(picked_channel[index, ...], y[index, ...].long())
+            iou_individual += self.validation_IOU2(picked_channel[index, ...], y[index, ...].int()).float()
+            precision += self.validation_precision(picked_channel[index, ...], y[index, ...].int())
+            acc += self.validation_Accuracy(picked_channel[index, ...], y[index, ...].int())
 
-            dice_individual += dice_score(picked_channel[index, ...], y[index, ...].squeeze(1).long(), reduction='none',
+            dice_individual += dice_score(picked_channel[index, ...], y[index, ...].squeeze(1).int(), reduction='none',
                                           bg=True, no_fg_score=1)[:4].float()
-            recall += self.validation_recall(picked_channel[index, ...], y[index, ...].long())
+            recall += self.validation_recall(picked_channel[index, ...], y[index, ...].int())
         iou_individual /= picked_channel.shape[0]
         precision /= picked_channel.shape[0]
         acc /= picked_channel.shape[0]
@@ -320,12 +331,13 @@ class BasetRAIN(pl.LightningModule):
         iou_summean = torch.sum(iou_individual * self.weights.cuda())
 
         result_saved = torch.cat((picked_channel, y), dim=1)
-        result_saved = torch.unsqueeze(result_saved, dim=1)
+        result_saved=label2rgb(result_saved.cpu())
 
-        result_saved = torch.hstack(
-            (result_saved.cpu().float(), result_saved.cpu().float(), result_saved.cpu().float()))
-        result_saved = mapping_color(result_saved)
-
+        # result_saved = torch.unsqueeze(result_saved, dim=1)
+        #
+        # result_saved = torch.hstack(
+        #     (result_saved.cpu().float(), result_saved.cpu().float(), result_saved.cpu().float()))
+        # result_saved = mapping_color(result_saved)
         folder = "saved_images/"
         if not os.path.exists(folder):
             os.makedirs(folder)
@@ -333,11 +345,15 @@ class BasetRAIN(pl.LightningModule):
             result_saved, f"{folder}/infer_result{batch_idx}.jpg"
         )
 
+
         returndic = {}
         returndic.setdefault("recall", recall)
         returndic.setdefault("precision", precision)
         returndic.setdefault("acc", acc)
 
+        returndic.setdefault("picked_channel", picked_channel)
+        returndic.setdefault("y", y.int())
+        #
         returndic.setdefault("iou_individual_bg", iou_individual[0])
         returndic.setdefault("iou_individual_liver", iou_individual[1])
         returndic.setdefault("iou_individual_left_lung", iou_individual[2])
@@ -347,6 +363,21 @@ class BasetRAIN(pl.LightningModule):
         return returndic
 
     def test_epoch_end(self, outputs):
+        '''
+        outputs 是所有step输出的集合，tuple类型，长度为step数，神了，
+        我也不知道pl咋做的，反正就是这个epoch里的step的集合。。我还以为要用on step end 才行，结果这个api就行、、
+
+        '''
+        print('test epoch end')
+
+        outpick=torch.cat([x['picked_channel'] for x in outputs],dim=0)
+        outy=torch.cat([x['y'] for x in outputs],dim=0)
+        mat=calculate_eval_matrix(num_cls=4, labels=outy.cpu().numpy(), predictions=outpick.cpu().numpy())
+        iou=calculate_IoU(mat)
+        dice=calculate_dice(mat)
+        print(iou)
+        print(dice)
+
         avg_iou_individual_bg = torch.stack([x['iou_individual_bg'] for x in outputs]).mean()
         avg_acc = torch.stack([x['acc'] for x in outputs]).mean()
         avg_iou_individual_liver = torch.stack([x['iou_individual_liver'] for x in outputs]).mean()
