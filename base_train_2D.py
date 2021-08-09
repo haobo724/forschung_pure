@@ -31,7 +31,7 @@ class BasetRAIN(pl.LightningModule):
         self.validation_precision = torchmetrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_Accuracy = torchmetrics.Accuracy(num_classes=4)
         self.validation_IOU2 = torchmetrics.IoU(num_classes=4, absent_score=1, reduction='none')
-        if hparams['datasetmode'] == 6 or hparams['datasetmode'] == 8:
+        if hparams['datasetmode'] == 4 or hparams['datasetmode'] == 8:
             self.modifiy_label_ON = True
             print(f'[INFO] modifiy_label_ON={self.modifiy_label_ON}')
         else:
@@ -99,11 +99,13 @@ class BasetRAIN(pl.LightningModule):
                         # if torch.max(y_copy[idx, ...]) != 0:
                         y_copy[idx, 0, realcord_y2, realcord_x2] = float(key)
                 else:
+                    if self.datamode=='4':
+                        continue
                     picked_channel = None
-                    print(z)
+                    print('identity mark z is ：',z)
                     raise ValueError('Data error')
 
-                predlist.append(picked_channel)
+                # predlist.append(picked_channel)
             # if self.current_epoch>4:
             #     plt.figure()
             #     if z_bactch[0] == 2:
@@ -157,7 +159,6 @@ class BasetRAIN(pl.LightningModule):
             pred = torch.sigmoid(self(x))
         else:
             pred = self(x)
-        loss = self.loss.forward(pred, y)
 
         # argmax
         pred = torch.softmax(pred, dim=1)
@@ -177,6 +178,7 @@ class BasetRAIN(pl.LightningModule):
         dice_individual /= picked_channel.shape[0]
         recall /= picked_channel.shape[0]
         iou_summean = torch.sum(iou_individual * self.weights.cuda())
+        loss = self.loss.forward(pred, y)
 
         returndic = {}
         returndic.setdefault("loss", loss)
@@ -202,7 +204,6 @@ class BasetRAIN(pl.LightningModule):
         self.log('train/loss', avg_loss)
 
     def validation_epoch_end(self, outputs):
-        print('len:', len(outputs))
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         avg_recall = torch.stack([x['recall'] for x in outputs]).mean()
         avg_precision = torch.stack([x['precision'] for x in outputs]).mean()
@@ -295,6 +296,7 @@ class BasetRAIN(pl.LightningModule):
         x, y = batch['image'], batch['label']
         y = y.squeeze(1)
         pred = torch.sigmoid(self(x))
+
         picked_channel = pred.argmax(dim=1)
         iou_individual = 0
         recall = 0
