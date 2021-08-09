@@ -290,6 +290,11 @@ class BasetRAIN(pl.LightningModule):
         '''
 
         def mapping_color(img):
+            '''
+            自己写的，速度快不少，但要自己规定colormap，也可以把制定colormap拿出来单独用randint做，
+            但是不能保证一个series里每次运行生成的colormap都一样，或许可以用种子点？
+            反正类少还是可以考虑用这个
+                    '''
             color_map = [[255, 0, 0], [255, 255, 0], [0, 0, 255]]
             for label in [1, 2, 3]:
                 cord_1 = torch.where(img[:, 0, ...] == label)
@@ -298,6 +303,10 @@ class BasetRAIN(pl.LightningModule):
                 img[:, 2, cord_1[1], cord_1[2]] = color_map[label - 1][2]
             return img
         def label2rgb(img):
+            '''
+            用了skimage速度慢点，但是不用操心有几个类
+
+            '''
             templist=[]
             for i in range(img.size()[0]):
                 temp=color.label2rgb(img[i].numpy(),bg_label=0)
@@ -331,13 +340,13 @@ class BasetRAIN(pl.LightningModule):
         iou_summean = torch.sum(iou_individual * self.weights.cuda())
 
         result_saved = torch.cat((picked_channel, y), dim=1)
-        result_saved=label2rgb(result_saved.cpu())
+        # result_saved=label2rgb(result_saved.cpu())
 
-        # result_saved = torch.unsqueeze(result_saved, dim=1)
-        #
-        # result_saved = torch.hstack(
-        #     (result_saved.cpu().float(), result_saved.cpu().float(), result_saved.cpu().float()))
-        # result_saved = mapping_color(result_saved)
+        result_saved = torch.unsqueeze(result_saved, dim=1)
+
+        result_saved = torch.hstack(
+            (result_saved, result_saved, result_saved))
+        result_saved = mapping_color(result_saved).cpu().float()
         folder = "saved_images/"
         if not os.path.exists(folder):
             os.makedirs(folder)
