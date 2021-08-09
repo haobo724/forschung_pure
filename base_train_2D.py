@@ -101,9 +101,10 @@ class BasetRAIN(pl.LightningModule):
                 else:
                     if self.datamode=='4':
                         continue
-                    picked_channel = None
-                    print('identity mark z is ：',z)
-                    raise ValueError('Data error')
+                    else:
+                        picked_channel = None
+                        print('identity mark z is ：',z)
+                        raise ValueError('Data error')
 
                 # predlist.append(picked_channel)
             # if self.current_epoch>4:
