@@ -322,8 +322,8 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D', Input_worker=
         num_alllabel = len(Fulllabel_str_list_T)
         test_patient = [
             {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
-            zip(Fulllabel_str_list_T[350:360]+Fulllabel_str_list_T[150:155], Fulllabel_str_list_mask_T[350:360]+Fulllabel_str_list_mask_T[150:155])
-            # zip(Fulllabel_str_list_T, Fulllabel_str_list_mask_T)
+            # zip(Fulllabel_str_list_T[350:360]+Fulllabel_str_list_T[150:155], Fulllabel_str_list_mask_T[350:360]+Fulllabel_str_list_mask_T[150:155])
+            zip(Fulllabel_str_list_T, Fulllabel_str_list_mask_T)
         ]
         test_ALLlabel_patient_DS = monai.data.CacheDataset(
             data=test_patient,

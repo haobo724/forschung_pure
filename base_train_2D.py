@@ -25,7 +25,7 @@ class BasetRAIN(pl.LightningModule):
         self.batch_size = hparams['batch_size']
         self.opt = hparams['opt']
         self.lungrecord = np.empty((1, 0))
-
+        self.datamode = hparams['datasetmode']
         # self.train_logger = logging.getLogger(__name__)
         self.validation_recall = torchmetrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_precision = torchmetrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
@@ -50,12 +50,7 @@ class BasetRAIN(pl.LightningModule):
         #         self.lr *=0.8
         #     if self.lr != lr:
         #         print("new lr=",self.lr)
-        if self.lossflag == 'Dice':
-            y_hat = self(x)
-            y_hat = torch.sigmoid(y_hat)
-
-        else:
-            y_hat = self(x)
+        y_hat = self(x)
 
         y_copy = y.clone()
         predlist = []
@@ -65,8 +60,7 @@ class BasetRAIN(pl.LightningModule):
             for idx, z in enumerate(z_bactch):
                 z = float(z)
                 if z != 0:
-                    # pred = torch.sigmoid(y_hat[idx,...])
-                    # picked_channel = pred.argmax(dim=0)
+
                     picked_channel = y_hat[idx, ...].argmax(dim=0)
                     tmp = torch.where(picked_channel == z)
                     '''
@@ -147,6 +141,8 @@ class BasetRAIN(pl.LightningModule):
             #         axs[3].imshow(x[i, 0, ...].cpu().numpy(), cmap='Blues')
             #         axs[3].set_title(f'Input data')
             #     plt.show()
+        if self.lossflag == 'Dice':
+            y_hat = torch.sigmoid(y_hat)
         loss = self.loss.forward(y_hat, y_copy)
         self.log("loss", loss)
         return {"loss": loss}
@@ -157,8 +153,10 @@ class BasetRAIN(pl.LightningModule):
         x, y = batch["image"], batch["label"]
         # shape = [batch, channel, w, h]
         # z_bactch= batch["leaky"]
-        pred = torch.sigmoid(self(x))
-
+        if self.lossflag == 'Dice':
+            pred = torch.sigmoid(self(x))
+        else:
+            pred = self(x)
         loss = self.loss.forward(pred, y)
 
         # argmax
@@ -284,6 +282,7 @@ class BasetRAIN(pl.LightningModule):
         但其他参数不是这样
         saveimg (batch,colorchannel,h,w)
         '''
+
         def mapping_color(img):
             color_map = [[255, 0, 0], [255, 255, 0], [0, 0, 255]]
             for label in [1, 2, 3]:
@@ -292,6 +291,7 @@ class BasetRAIN(pl.LightningModule):
                 result_saved[:, 1, cord_1[1], cord_1[2]] = color_map[label - 1][1]
                 result_saved[:, 2, cord_1[1], cord_1[2]] = color_map[label - 1][2]
             return result_saved
+
         x, y = batch['image'], batch['label']
         y = y.squeeze(1)
         pred = torch.sigmoid(self(x))
@@ -315,20 +315,20 @@ class BasetRAIN(pl.LightningModule):
         dice_individual /= picked_channel.shape[0]
         recall /= picked_channel.shape[0]
         iou_summean = torch.sum(iou_individual * self.weights.cuda())
-        
-        result_saved = torch.cat((picked_channel,y),dim=1)
+
+        result_saved = torch.cat((picked_channel, y), dim=1)
         result_saved = torch.unsqueeze(result_saved, dim=1)
 
-        result_saved = torch.hstack((result_saved.cpu().float(), result_saved.cpu().float(), result_saved.cpu().float()))
-        result_saved=mapping_color(result_saved)
-
+        result_saved = torch.hstack(
+            (result_saved.cpu().float(), result_saved.cpu().float(), result_saved.cpu().float()))
+        result_saved = mapping_color(result_saved)
 
         folder = "saved_images/"
-
+        if not os.path.exists(folder):
+            os.makedirs(folder)
         torchvision.utils.save_image(
             result_saved, f"{folder}/infer_result{batch_idx}.jpg"
         )
-
 
         returndic = {}
         returndic.setdefault("recall", recall)
