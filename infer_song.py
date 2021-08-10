@@ -1,4 +1,5 @@
 import os
+import shutil
 import sys
 import torch
 import monai
@@ -53,9 +54,17 @@ def infer():
     )
 
     model = benchmark_unet_2d.load_from_checkpoint(args.ckpt, hparams=vars(args))
+    test = torch.load(args.ckpt)
+    datamode = test['hyper_parameters']['datasetmode']
+    loss_method = test['hyper_parameters']['loss']
     start_time = time.time()
     trainer = pl.Trainer(gpus=-1, logger=logger, precision=16)
     trainer.test(model, infer_loader)
+    if os.path.exists('saved_images'):
+        newname = f'saved_images_mode{datamode}_{loss_method}'
+        if os.path.exists(newname):
+            shutil.rmtree(newname)
+        os.rename('saved_images', newname)
     print('time:', time.time() - start_time)  # time: 91.36657166481018
 
 

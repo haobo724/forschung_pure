@@ -1,20 +1,43 @@
 import numpy as np
 import torch
-from measures import calculate_eval_matrix,calculate_union,calculate_intersection
+from measures import calculate_eval_matrix, calculate_union, calculate_intersection
 
 import pickle
 import torchmetrics.functional as f
 import matplotlib.pyplot as plt
 import pycuda
 from collections import Counter
-pred=np.random.randint(0,4,(152,407,407))
-print(np.max(pred))
-print(np.min(pred))
-target=np.random.randint(0,4,(152,407,407))
 
-mat=calculate_eval_matrix(4,pred,pred)
-iou=calculate_intersection(mat)/calculate_union(mat)
-print(iou)
+# pred=np.random.randint(0,4,(152,407,407))
+# print(np.max(pred))
+# print(np.min(pred))
+# target=np.random.randint(0,4,(152,407,407))
+#
+# mat=calculate_eval_matrix(4,pred,pred)
+# iou=calculate_intersection(mat)/calculate_union(mat)
+# print(iou)
+
+
+for i in range(1, 100):
+
+    if i %3 !=0 and i%5==0:
+        word ='f'
+        print(word)
+        continue
+    if i % 3 == 0 and i % 5 != 0:
+        word = 'b'
+        print(word)
+        continue
+        if i%5==0:
+            word +='b'
+            print(word)
+            continue
+        else:
+            print(word)
+            continue
+    print(i)
+
+
 # a=torch.ones((512,512))
 # a[0,2]=10
 # a[4,2]=10
@@ -27,7 +50,6 @@ print(iou)
 # i=torch.where(idx==True)
 #
 # print(i)
-
 
 
 # t= torch.tensor([10])
@@ -60,6 +82,3 @@ print(iou)
 # plt.colorbar()
 #
 # plt.show()
-
-
-
