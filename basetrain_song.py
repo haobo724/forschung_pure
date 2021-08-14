@@ -28,6 +28,12 @@ sys.path.append(os.path.dirname(__file__))
 # All 2D pipelines inherit the 2D base pipeline class. For complete implementation of training
 # pipeline pls see base_train_2D.py
 class benchmark_unet_2d(BasetRAIN):
+    '''
+
+    CEloss target不用onehot，也就是Dice的target就是一层就好
+    Dice需要，也就是和prediction同size，并且根据公式应该对prediction做sigmod
+
+    '''
     def __init__(self, hparams):
         super().__init__(hparams)
 
@@ -104,7 +110,7 @@ def cli_main():
     logging.info(f'dataset from {args.data_folder}')
 
     dm = Song_dataset_2d_with_CacheDataloder(args.data_folder[0],
-                                             worker=args.worker,
+                                             worker=0,
                                              batch_size=args.batch_size,
                                              mode=args.datasetmode)
 

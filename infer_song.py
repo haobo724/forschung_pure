@@ -52,11 +52,12 @@ def infer():
         collate_fn=pad_list_data_collate
 
     )
-
-    model = benchmark_unet_2d.load_from_checkpoint(args.ckpt, hparams=vars(args))
     test = torch.load(args.ckpt)
     datamode = test['hyper_parameters']['datasetmode']
     loss_method = test['hyper_parameters']['loss']
+    args.loss=loss_method
+    model = benchmark_unet_2d.load_from_checkpoint(args.ckpt, hparams=vars(args))
+
     start_time = time.time()
     trainer = pl.Trainer(gpus=-1, logger=logger, precision=16)
     trainer.test(model, infer_loader)

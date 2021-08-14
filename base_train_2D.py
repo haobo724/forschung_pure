@@ -1,8 +1,6 @@
 import os
 import sys
 import pickle
-
-import cv2
 import matplotlib.pyplot as plt
 import torch
 import torchmetrics
@@ -35,7 +33,7 @@ class BasetRAIN(pl.LightningModule):
         self.validation_precision = torchmetrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_Accuracy = torchmetrics.Accuracy(num_classes=4)
         self.validation_IOU2 = torchmetrics.IoU(num_classes=4, absent_score=1, reduction='none')
-        if hparams['datasetmode'] == 4 or hparams['datasetmode'] == 8:
+        if hparams['datasetmode'] == 4 or hparams['datasetmode'] == 8 or  hparams['datasetmode'] ==6:
             self.modifiy_label_ON = True
             print(f'[INFO] modifiy_label_ON={self.modifiy_label_ON}')
         else:
@@ -59,14 +57,13 @@ class BasetRAIN(pl.LightningModule):
         y_copy = y.clone()
         predlist = []
 
-        # print(self.current_epoch)
         if self.modifiy_label_ON:
             for idx, z in enumerate(z_bactch):
                 z = float(z)
                 if z != 0:
-
                     picked_channel = y_hat[idx, ...].argmax(dim=0)
-                    tmp = torch.where(picked_channel == z)
+                    cord_not_sure =picked_channel == z
+                    assert len(picked_channel.size()) == 2
                     '''
                    --------------------x 
                     |
@@ -74,44 +71,33 @@ class BasetRAIN(pl.LightningModule):
                     |
                     y
                     '''
-                    cord_y = tmp[0]
-                    cord_x = tmp[1]
-
-                    real_tmp = y[idx, 0, cord_y, cord_x] == 0
-                    idxx = torch.where(real_tmp == True)
+                    cord_zero_InTarget = y[idx,0,...]== 0
 
                     # 如果在原groundtruth里是背景才会修改，不是不改
 
-                    realcord_y = cord_y[idxx]
-                    realcord_x = cord_x[idxx]
-
+                    realcord=torch.bitwise_and(cord_not_sure,cord_zero_InTarget)
+                    temp= realcord==True
                     # if torch.max(y_copy[idx,...])!=0:
-                    y_copy[idx, 0, realcord_y, realcord_x] = z
+                    y_copy[idx, 0][realcord==True] = z
 
                     # todo:如果是肺，右肺（label=3）再来一遍
-                    if z == 2.:
-                        key = z + 1.
-                        tmp_zusatz = torch.where(picked_channel == key)
-                        cord_y_zusatz = tmp_zusatz[0]
-                        cord_x_zusatz = tmp_zusatz[1]
-                        # realcord清空
-                        real_tmp2 = y_copy[idx, 0, cord_y_zusatz, cord_x_zusatz] == 0
-                        idxx2 = torch.where(real_tmp2 == True)
-                        realcord_y2 = cord_y_zusatz[idxx2]
-                        realcord_x2 = cord_x_zusatz[idxx2]
+                    if z == 2:
+                        cord_not_sure = picked_channel == 3
+                        cord_zero_InTarget = y[idx,0,...] == 0
+                        realcord = torch.bitwise_and(cord_not_sure, cord_zero_InTarget)==True
+                        y_copy[idx, 0][realcord==True] = 3
 
-                        # if torch.max(y_copy[idx, ...]) != 0:
-                        y_copy[idx, 0, realcord_y2, realcord_x2] = float(key)
                 else:
                     if self.datamode == 4:
+                        print('mode4')
                         continue
                     else:
                         picked_channel = None
                         print('identity mark z is ：', z)
                         raise ValueError('Data error')
 
-                # predlist.append(picked_channel)
-            # if self.current_epoch>4:
+            #     predlist.append(picked_channel)
+            # if self.current_epoch>-1:
             #     plt.figure()
             #     if z_bactch[0] == 2:
             #         text='Lung'
@@ -122,7 +108,8 @@ class BasetRAIN(pl.LightningModule):
             #     plt.show()
             #
             #     plt.imshow(predlist[0].cpu().numpy(), cmap='Blues')
-            #     plt.title(f'Prediction')
+            #     class_pred=torch.unique(predlist[0])
+            #     plt.title(f'Prediction,has{class_pred}')
             #     plt.show()
             #
             #     plt.imshow(y[0, 0, ...].cpu().numpy(), cmap='Blues')
@@ -130,9 +117,11 @@ class BasetRAIN(pl.LightningModule):
             #     plt.show()
             #
             #     plt.imshow(y_copy[0, 0, ...].cpu().numpy(), cmap='Blues')
-            #     plt.title(f'Simulate non-fully annotated dataset')
+            #     class_pred2=torch.unique(y_copy[0, 0, ...])
+            #
+            #     plt.title(f'Simulate non-fully annotated dataset,has{class_pred2}')
             #     plt.show()
-
+            #
             #     fig, axs = plt.subplots(1, 4)
             #     for i in range(1):
             #         axs[0].imshow(predlist[i].cpu().numpy(), cmap='Blues')

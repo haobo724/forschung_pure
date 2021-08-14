@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
 import numpy as np
-
+import monai
 
 class ConvBlock(nn.Module):
     "...-> conv -> BN -> relu -> conv -> BN -> relu ..."
@@ -145,5 +145,16 @@ if __name__ == '__main__':
     # print(model2)
 
     x = torch.rand(1, 1, 128, 128)
+    target = torch.randint(0,3,(1, 1,128, 128))
+    target=torch.squeeze(target, dim=1)
     y = model(x)
+    y=torch.sigmoid(y)
+
     print(y.shape)
+    print(target.shape)
+    loss=nn.CrossEntropyLoss()
+    #
+    # loss2=monai.losses.DiceLoss(to_onehot_y=True)
+    # loss2.forward(y,target)
+    loss.forward(y,target)
+    # loss.forward(y,target)
