@@ -32,7 +32,8 @@ class BasetRAIN(pl.LightningModule):
         self.validation_recall = torchmetrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_precision = torchmetrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_Accuracy = torchmetrics.Accuracy(num_classes=4)
-        self.validation_IOU2 = torchmetrics.IoU(num_classes=4, absent_score=1, reduction='none')
+        self.validation_IOU2 = torchmetrics.IoU(num_classes=4, absent_score=1)
+        self.validation_IOU = torchmetrics.IoU(num_classes=4, absent_score=1,reduction='none')
         if hparams['datasetmode'] == 4 or hparams['datasetmode'] == 8 or  hparams['datasetmode'] ==6:
             self.modifiy_label_ON = True
             print(f'[INFO] modifiy_label_ON={self.modifiy_label_ON}')
@@ -96,8 +97,8 @@ class BasetRAIN(pl.LightningModule):
                         print('identity mark z is ：', z)
                         raise ValueError('Data error')
 
-            #     predlist.append(picked_channel)
-            # if self.current_epoch>-1:
+                # predlist.append(picked_channel)
+            # if self.current_epoch>3:
             #     plt.figure()
             #     if z_bactch[0] == 2:
             #         text='Lung'
@@ -155,21 +156,18 @@ class BasetRAIN(pl.LightningModule):
         # argmax
         pred = torch.softmax(pred, dim=1)
         picked_channel = pred.argmax(dim=1)
-        iou_individual = 0
-        recall = 0
-        precision = 0
-        dice_individual = 0
-        for index in range(picked_channel.shape[0]):
-            iou_individual += self.validation_IOU2(picked_channel[index, ...], y[index, ...].long()).float()
-            precision += self.validation_precision(picked_channel[index, ...], y[index, ...].long())
-            dice_individual += dice_score(picked_channel[index, ...], y[index, ...].squeeze(1).long(), reduction='none',
-                                          bg=True, no_fg_score=1)[:4].float()
-            recall += self.validation_recall(picked_channel[index, ...], y[index, ...].long())
-        iou_individual /= picked_channel.shape[0]
-        precision /= picked_channel.shape[0]
-        dice_individual /= picked_channel.shape[0]
-        recall /= picked_channel.shape[0]
-        iou_summean = torch.sum(iou_individual * self.weights.cuda())
+
+        # for index in range(picked_channel.shape[0]):
+        #     iou_individual += self.validation_IOU2(picked_channel[index, ...], y[index, ...].long()).float()
+        #     precision += self.validation_precision(picked_channel[index, ...], y[index, ...].long())
+        #     dice_individual += dice_score(picked_channel[index, ...], y[index, ...].squeeze(1).long(), reduction='none',
+        #                                   bg=True, no_fg_score=1)[:4].float()
+        #     recall += self.validation_recall(picked_channel[index, ...], y[index, ...].long())
+        precision =self.validation_precision(picked_channel, y.long())
+        dice_summean =dice_score(picked_channel, y.squeeze(1).long(),
+                                           bg=True, no_fg_score=1).float()
+        recall =self.validation_recall(picked_channel, y.long())
+        iou_summean = self.validation_IOU2(picked_channel, y.long())
 
         if self.lossflag == 'Dice':
             pred = torch.sigmoid(self(x))
@@ -179,16 +177,17 @@ class BasetRAIN(pl.LightningModule):
         returndic.setdefault("loss", loss)
         returndic.setdefault("recall", recall)
         returndic.setdefault("precision", precision)
-        returndic.setdefault("iou_individual_bg", iou_individual[0])
-        returndic.setdefault("iou_individual_liver", iou_individual[1])
-        returndic.setdefault("iou_individual_left_lung", iou_individual[2])
-        returndic.setdefault("iou_individual_right_lung", iou_individual[3])
+        # returndic.setdefault("iou_individual_bg", iou_individual[0])
+        # returndic.setdefault("iou_individual_liver", iou_individual[1])
+        # returndic.setdefault("iou_individual_left_lung", iou_individual[2])
+        # returndic.setdefault("iou_individual_right_lung", iou_individual[3])
         returndic.setdefault("iou_summean", iou_summean)
-
-        returndic.setdefault("dice_individual_bg", dice_individual[0])
-        returndic.setdefault("dice_individual_liver", dice_individual[1])
-        returndic.setdefault("dice_individual_left_lung", dice_individual[2])
-        returndic.setdefault("dice_individual_right_lung", dice_individual[3])
+        returndic.setdefault("dice_summean", dice_summean)
+        #
+        # returndic.setdefault("dice_individual_bg", dice_individual[0])
+        # returndic.setdefault("dice_individual_liver", dice_individual[1])
+        # returndic.setdefault("dice_individual_left_lung", dice_individual[2])
+        # returndic.setdefault("dice_individual_right_lung", dice_individual[3])
 
         return returndic
 
@@ -202,30 +201,32 @@ class BasetRAIN(pl.LightningModule):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         avg_recall = torch.stack([x['recall'] for x in outputs]).mean()
         avg_precision = torch.stack([x['precision'] for x in outputs]).mean()
-        avg_iou_individual_bg = torch.stack([x['iou_individual_bg'] for x in outputs]).mean()
-        avg_iou_individual_liver = torch.stack([x['iou_individual_liver'] for x in outputs]).mean()
-        avg_iou_individual_left_lung = torch.stack([x['iou_individual_left_lung'] for x in outputs]).mean()
-        avg_iou_individual_right_lung = torch.stack([x['iou_individual_right_lung'] for x in outputs]).mean()
+        # avg_iou_individual_bg = torch.stack([x['iou_individual_bg'] for x in outputs]).mean()
+        # avg_iou_individual_liver = torch.stack([x['iou_individual_liver'] for x in outputs]).mean()
+        # avg_iou_individual_left_lung = torch.stack([x['iou_individual_left_lung'] for x in outputs]).mean()
+        # avg_iou_individual_right_lung = torch.stack([x['iou_individual_right_lung'] for x in outputs]).mean()
         avg_iousummean = torch.stack([x['iou_summean'] for x in outputs]).mean()
+        avg_dice_summean = torch.stack([x['dice_summean'] for x in outputs]).mean()
 
-        avg_dice_individual_bg = torch.stack([x['dice_individual_bg'] for x in outputs]).mean()
-        avg_dice_individual_liver = torch.stack([x['dice_individual_liver'] for x in outputs]).mean()
-        avg_dice_individual_left_lung = torch.stack([x['dice_individual_left_lung'] for x in outputs]).mean()
-        avg_dice_individual_right_lung = torch.stack([x['dice_individual_right_lung'] for x in outputs]).mean()
+        # avg_dice_individual_bg = torch.stack([x['dice_individual_bg'] for x in outputs]).mean()
+        # avg_dice_individual_liver = torch.stack([x['dice_individual_liver'] for x in outputs]).mean()
+        # avg_dice_individual_left_lung = torch.stack([x['dice_individual_left_lung'] for x in outputs]).mean()
+        # avg_dice_individual_right_lung = torch.stack([x['dice_individual_right_lung'] for x in outputs]).mean()
 
         # self.train_logger.info(f"Validatoin epoch {self.current_epoch} ends, val_loss = {avg_loss}")
         self.log('valid/loss', avg_loss, logger=True)
         self.log('valid/recall', avg_recall, logger=True)
         self.log('valid/precision', avg_precision, logger=True)
-        self.log('valid/avg_iou_individual_bg', avg_iou_individual_bg, logger=True)
-        self.log('valid/avg_iou_individual_liver', avg_iou_individual_liver, logger=True)
-        self.log('valid/avg_iou_individual_left_lung', avg_iou_individual_left_lung, logger=True)
-        self.log('valid/avg_iou_individual_right_lung', avg_iou_individual_right_lung, logger=True)
-        self.log('valid/avg_dice_individual_bg', avg_dice_individual_bg, logger=True)
-        self.log('valid/avg_dice_individual_liver', avg_dice_individual_liver, logger=True)
-        self.log('valid/avg_dice_individual_left_lung', avg_dice_individual_left_lung, logger=True)
-        self.log('valid/avg_dice_individual_right_lung', avg_dice_individual_right_lung, logger=True)
+        # self.log('valid/avg_iou_individual_bg', avg_iou_individual_bg, logger=True)
+        # self.log('valid/avg_iou_individual_liver', avg_iou_individual_liver, logger=True)
+        # self.log('valid/avg_iou_individual_left_lung', avg_iou_individual_left_lung, logger=True)
+        # self.log('valid/avg_iou_individual_right_lung', avg_iou_individual_right_lung, logger=True)
+        # self.log('valid/avg_dice_individual_bg', avg_dice_individual_bg, logger=True)
+        # self.log('valid/avg_dice_individual_liver', avg_dice_individual_liver, logger=True)
+        # self.log('valid/avg_dice_individual_left_lung', avg_dice_individual_left_lung, logger=True)
+        # self.log('valid/avg_dice_individual_right_lung', avg_dice_individual_right_lung, logger=True)
         self.log('avg_iousummean', avg_iousummean, logger=True)
+        self.log('avg_iousummean', avg_dice_summean, logger=True)
 
     def configure_optimizers(self):
         if self.opt == 'Adam':
@@ -317,7 +318,7 @@ class BasetRAIN(pl.LightningModule):
         dice_individual = 0
         acc = 0
         for index in range(picked_channel.shape[0]):
-            iou_individual += self.validation_IOU2(picked_channel[index, ...], y[index, ...].int()).float()
+            iou_individual += self.validation_IOU(picked_channel[index, ...], y[index, ...].int()).float()
             precision += self.validation_precision(picked_channel[index, ...], y[index, ...].int())
             acc += self.validation_Accuracy(picked_channel[index, ...], y[index, ...].int())
 

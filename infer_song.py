@@ -56,6 +56,7 @@ def infer():
     datamode = test['hyper_parameters']['datasetmode']
     loss_method = test['hyper_parameters']['loss']
     args.loss=loss_method
+    print(args.loss)
     model = benchmark_unet_2d.load_from_checkpoint(args.ckpt, hparams=vars(args))
 
     start_time = time.time()
