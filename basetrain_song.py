@@ -9,7 +9,7 @@ from models.BasicUnet import BasicUnet
 from models.Unet_song import UNET
 
 # Loss import
-from loss import CELoss, DiceLoss
+from loss import CELoss
 import monai
 from argparse import ArgumentParser
 
@@ -34,14 +34,15 @@ class benchmark_unet_2d(BasetRAIN):
     Dice需要，也就是和prediction同size，并且根据公式应该对prediction做sigmod
 
     '''
+
     def __init__(self, hparams):
         super().__init__(hparams)
 
         self.model = BasicUnet(in_channels=1, out_channels=4, nfilters=32).cuda()
         # self.model = UNET(in_channels=1, out_channels=4).cuda()
-        weights = [0.5, 1.0, 1.0, 1.0]
+        self.weights = [0.5, 1.0, 1.0, 1.0]
         if hparams['loss'] == 'CE':
-            self.loss = CELoss(weight=weights)
+            self.loss = CELoss(weight=self.weights)
             print("CELoss will be used")
         else:
             self.loss = monai.losses.DiceLoss(to_onehot_y=True)
@@ -61,6 +62,19 @@ class benchmark_unet_2d(BasetRAIN):
         return parser
 
 
+class ContinueTrain(benchmark_unet_2d):
+    def __init__(self, hparams):
+        super().__init__(hparams)
+
+        self.model = benchmark_unet_2d.load_from_checkpoint(hparams['lastcheckpoint'])
+        # self.model.freeze()
+
+        self.save_hyperparameters()
+    def forward(self, x):
+        return self.model(x)
+
+
+
 # main function
 def cli_main():
     pl.seed_everything(1234)
@@ -74,13 +88,13 @@ def cli_main():
     parser = benchmark_unet_2d.add_model_specific_args(parser)
 
     args = parser.parse_args()
-    print('resume:',args.resume)
+    print('resume:', args.resume)
     # --resume
     # False
     # --lastcheckpoint
-    # F:\Forschung\pure\lightning_logs\mode3\my_model\version_0\checkpoints\last.ckpt
+    # F:\Forschung\pure\lightning_logs\mode6\my_model\version_157\checkpoints\last.ckpt
     # --hpar
-    # F:\Forschung\pure\lightning_logs\mode3\my_model\version_0\hparams.yaml
+    # F:\Forschung\pure\lightning_logs\mode6\my_model\version_157\hparams.yaml
     # create the pipeline
 
     # Ckpt callbacks
@@ -98,10 +112,11 @@ def cli_main():
     # create trainer using pytorch_lightning
     if args.resume:
         print("Resume")
-        net = benchmark_unet_2d(hparams=vars(args))
+        # net = benchmark_unet_2d(hparams=vars(args)).load_from_checkpoint(args.lastcheckpoint)
+        net = ContinueTrain(hparams=vars(args))
         trainer = pl.Trainer.from_argparse_args(args, precision=16, check_val_every_n_epoch=2,
                                                 callbacks=[ckpt_callback], num_sanity_val_steps=0, logger=logger
-                                                , resume_from_checkpoint=args.lastcheckpoint)
+                                                )
     else:
         net = benchmark_unet_2d(hparams=vars(args))
         trainer = pl.Trainer.from_argparse_args(args, precision=16, check_val_every_n_epoch=2,
@@ -135,7 +150,6 @@ def cli_main():
 
 
 if __name__ == "__main__":
-    
     cli_main()
     #
     # model_infer(models=glob.glob('.\\lightning_logs\\version_650051\\**\\*.ckpt', recursive=True),
