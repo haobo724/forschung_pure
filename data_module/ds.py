@@ -76,6 +76,28 @@ def getdataset(data_path):
     return root_str, img_list, mask_list
 
 
+def clean_dataset(img_list, mask_list, root_str):
+    read_transform = monai.transforms.Compose(
+        [monai.transforms.LoadImaged('mask'),
+         monai.transforms.CastToTyped('mask', dtype=np.uint8),
+         monai.transforms.ToNumpyd('mask')]
+    )
+    clean_mask = []
+    clean_img = []
+    print('original data len:', len(mask_list))
+    for img, mask in zip(img_list, mask_list):
+        temp_dict = {'mask': root_str + '\\' + mask}
+        convert_mask = read_transform(temp_dict)['mask']
+        if len(np.unique(convert_mask)) == 1:
+            continue
+        else:
+            clean_mask.append(mask)
+            clean_img.append(img)
+    print('clean data len:', len(clean_mask))
+
+    return clean_img, clean_mask
+
+
 def getpatient_name(img_list):
     '''
     input：装着img名字的list
@@ -278,6 +300,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D', Input_worker=
     '''
     data_path = data_path
     root_str, img_list, mask_list = getdataset(data_path)
+    img_list, mask_list = clean_dataset(img_list, mask_list, root_str)
 
     patient_name, patient_num = getpatient_name(img_list)
     patient_name = sorted(patient_name)
@@ -319,7 +342,6 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D', Input_worker=
                                                                                fulllabeled_name_sub_T,
                                                                                root_str)
         keys = ("image", "label", "leaky")
-        num_alllabel = len(Fulllabel_str_list_T)
         test_patient = [
             {keys[0]: img, keys[1]: seg, keys[2]: seg} for img, seg in
             # zip(Fulllabel_str_list_T[350:360]+Fulllabel_str_list_T[150:155], Fulllabel_str_list_mask_T[350:360]+Fulllabel_str_list_mask_T[150:155])

@@ -3,7 +3,7 @@ import time
 import numpy as np
 import torch
 from measures import calculate_eval_matrix, calculate_union, calculate_intersection
-
+import monai
 import cv2
 import torchmetrics.functional as f
 import matplotlib.pyplot as plt
@@ -27,41 +27,23 @@ from collections import Counter
 # label_detail=np.unique(new_mask)
 # print(mask.shape)
 # print(label_detail)
-a=np.ones((400,400))
-a[0,2]=10
-a[2,2]=10
-
-b=np.ones((400,400))
-b[0,2]=0
-c=np.ones((400,400))
-
-time_mark1=time.time()
-cord1=a==10
-cord2=b==0
-cord3=np.bitwise_and(cord1,cord2)
-
-c[cord3==True]=6
-time_mark2=time.time()
-print(time_mark2-time_mark1)
-
-cord1_2=np.where(a == 10)
-cord_y = cord1_2[0]
-cord_x = cord1_2[1]
-real_tmp = b[cord_y, cord_x] == 0
-idxx = np.where(real_tmp == True)
-realcord_y = cord_y[idxx]
-realcord_x = cord_x[idxx]
-
-# if torch.max(y_copy[idx,...])!=0:
-c[realcord_y, realcord_x] = 6
-time_mark3=time.time()
-print(time_mark3-time_mark2)
+c=monai.transforms.Compose(
+    [monai.transforms.LoadImaged('image'),
+     monai.transforms.CastToTyped('image',dtype=np.uint8),
+    monai.transforms.ToTensord('image')]
+)
 
 
 
-i=np.where(c==6)
-print(i)
+# a = monai.transforms.LoadImaged(r(a, dtype=np.uint8)
+# a= 'F:\Forschung\multiorganseg\data\train_2D\2300088WW0_448_seg.nii.gz')
+# a = monai.transforms.CastToTyped
 
+# a=monai.transforms.convert_to_numpy(a)
+d={'image':r'F:\Forschung\multiorganseg\data\train_2D\2300088WW0_448_seg.nii.gz'}
+result = c(d)
+img=result['image']
+print(img.size())
 #
 #
 # x=[0,4,1,4]

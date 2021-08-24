@@ -80,6 +80,7 @@ class BasetRAIN(pl.LightningModule):
                     temp= realcord==True
                     # if torch.max(y_copy[idx,...])!=0:
                     y_copy[idx, 0][realcord==True] = z
+                    print(y_copy.size())
 
                     # todo:如果是肺，右肺（label=3）再来一遍
                     if z == 2:
@@ -139,7 +140,7 @@ class BasetRAIN(pl.LightningModule):
             #         axs[3].set_title(f'Input data')
             #     plt.show()
         if self.lossflag == 'Dice':
-            y_hat = torch.sigmoid(y_hat)
+            y_hat = torch.softmax(y_hat,dim=1)
         loss = self.loss.forward(y_hat, y_copy)
         self.log("loss", loss)
         return {"loss": loss}
@@ -170,7 +171,7 @@ class BasetRAIN(pl.LightningModule):
         iou_summean = self.validation_IOU2(picked_channel, y.long())
 
         if self.lossflag == 'Dice':
-            pred = torch.sigmoid(self(x))
+            pred = torch.softmax(self(x),dim=1)
         loss = self.loss.forward(pred, y)
 
         returndic = {}
