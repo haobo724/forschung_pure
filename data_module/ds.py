@@ -25,6 +25,8 @@
     """
 
 import os
+import pickle
+
 import matplotlib.pyplot as plt
 import monai
 import numpy as np
@@ -299,8 +301,19 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D', Input_worker=
 
     '''
     data_path = data_path
+
     root_str, img_list, mask_list = getdataset(data_path)
-    img_list, mask_list = clean_dataset(img_list, mask_list, root_str)
+
+    if os.path.exists('clean_dataset.pkl'):
+        print('clean_dataset exist!')
+        with open("clean_dataset.pkl", 'rb') as f:
+            (img_list, mask_list) = pickle.load(f)
+        assert len(img_list) == len(mask_list)
+
+    else:
+        img_list, mask_list = clean_dataset(img_list, mask_list, root_str)
+        with open("clean_dataset.pkl", 'wb') as f:
+            pickle.dump((img_list, mask_list), f)
 
     patient_name, patient_num = getpatient_name(img_list)
     patient_name = sorted(patient_name)

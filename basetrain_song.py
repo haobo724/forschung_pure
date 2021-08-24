@@ -40,9 +40,9 @@ class benchmark_unet_2d(BasetRAIN):
 
         self.model = BasicUnet(in_channels=1, out_channels=4, nfilters=32).cuda()
         # self.model = UNET(in_channels=1, out_channels=4).cuda()
-        self.weights = [0.5, 1.0, 1.0, 1.0]
+        Loss_weights = [0.5, 1.0, 1.0, 1.0]
         if hparams['loss'] == 'CE':
-            self.loss = CELoss(weight=self.weights)
+            self.loss = CELoss(weight=Loss_weights)
             print("CELoss will be used")
         else:
             self.loss = monai.losses.DiceLoss(to_onehot_y=True)

@@ -140,7 +140,7 @@ class BasetRAIN(pl.LightningModule):
             #         axs[3].set_title(f'Input data')
             #     plt.show()
         if self.lossflag == 'Dice':
-            y_hat = torch.softmax(y_hat,dim=1)
+            y_hat = torch.sigmoid(y_hat)
         loss = self.loss.forward(y_hat, y_copy)
         self.log("loss", loss)
         return {"loss": loss}
@@ -171,7 +171,7 @@ class BasetRAIN(pl.LightningModule):
         iou_summean = self.validation_IOU2(picked_channel, y.long())
 
         if self.lossflag == 'Dice':
-            pred = torch.softmax(self(x),dim=1)
+            pred = torch.sigmoid(self(x))
         loss = self.loss.forward(pred, y)
 
         returndic = {}
