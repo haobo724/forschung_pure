@@ -88,7 +88,7 @@ def clean_dataset(img_list, mask_list, root_str):
     clean_img = []
     print('original data len:', len(mask_list))
     for img, mask in zip(img_list, mask_list):
-        temp_dict = {'mask': root_str + '\\' + mask}
+        temp_dict = {'mask': root_str + '/' + mask}
         convert_mask = read_transform(temp_dict)['mask']
         if len(np.unique(convert_mask)) == 1:
             continue
@@ -294,7 +294,8 @@ def Part_Return(Nolung_str_list, NoLiver_str_list,
     return [], train_Nolung_patient_DS, train_NoLiver_patient_DS
 
 
-def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D', Input_worker=4, mode='train', dataset_mode=6):
+def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',
+            Input_worker=4, mode='train', dataset_mode=6,clean=False):
     '''
     根据传入不同的datasetmode返回不同组成的dataset
     根据传入不同的mode返回train 或 val 或test
@@ -303,17 +304,21 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D', Input_worker=
     data_path = data_path
 
     root_str, img_list, mask_list = getdataset(data_path)
+    if clean:
+        print(f'{mode} dataset is cleaned')
+        if os.path.exists('clean_dataset.pkl'):
+            print('clean_dataset exist!')
+            with open("clean_dataset.pkl", 'rb') as f:
+                (img_list, mask_list) = pickle.load(f)
+            assert len(img_list) == len(mask_list)
 
-    if os.path.exists('clean_dataset.pkl'):
-        print('clean_dataset exist!')
-        with open("clean_dataset.pkl", 'rb') as f:
-            (img_list, mask_list) = pickle.load(f)
-        assert len(img_list) == len(mask_list)
-
+        else:
+            img_list, mask_list = clean_dataset(img_list, mask_list, root_str)
+            with open("clean_dataset.pkl", 'wb') as f:
+                pickle.dump((img_list, mask_list), f)
     else:
-        img_list, mask_list = clean_dataset(img_list, mask_list, root_str)
-        with open("clean_dataset.pkl", 'wb') as f:
-            pickle.dump((img_list, mask_list), f)
+        print(f'{mode} dataset is not cleaned')
+
 
     patient_name, patient_num = getpatient_name(img_list)
     patient_name = sorted(patient_name)

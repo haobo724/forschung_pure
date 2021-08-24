@@ -80,7 +80,6 @@ class BasetRAIN(pl.LightningModule):
                     temp= realcord==True
                     # if torch.max(y_copy[idx,...])!=0:
                     y_copy[idx, 0][realcord==True] = z
-                    print(y_copy.size())
 
                     # todo:如果是肺，右肺（label=3）再来一遍
                     if z == 2:

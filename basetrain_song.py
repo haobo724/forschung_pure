@@ -59,6 +59,7 @@ class benchmark_unet_2d(BasetRAIN):
         parser = ArgumentParser(parents=[parent_parser], add_help=False)
         parser.add_argument('--lr', type=float, default=1e-4)
         parser.add_argument('--loss', type=str, default='CE')
+        parser.add_argument('--clean', type=bool, default=False)
         return parser
 
 
@@ -130,7 +131,8 @@ def cli_main():
     dm = Song_dataset_2d_with_CacheDataloder(args.data_folder[0],
                                              worker=0,
                                              batch_size=args.batch_size,
-                                             mode=args.datasetmode)
+                                             mode=args.datasetmode,
+                                             clean=args.clean)
 
     # dm.setup(stage='fit')
 

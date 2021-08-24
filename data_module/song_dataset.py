@@ -25,14 +25,14 @@ label_list = ['bg', 'liver', 'left_lung', 'right_lung']
 # Base class of Visceral_dataset_2d/3d
 # @pl.data_loader
 class Song_dataset_2d_with_CacheDataloder(pl.LightningDataModule):
-    def __init__(self, data_folder, worker, batch_size, mode, **kwargs):
+    def __init__(self, data_folder, worker, batch_size, mode,clean=False, **kwargs):
         super().__init__()
         self.cache_dir = None
         self.train_ds = None
         self.val_ds = None
         self.worker = worker
         self.datafolder = data_folder
-
+        self.clean=clean
         self.batch_size = batch_size
         self.mode = mode
 
@@ -108,11 +108,14 @@ class Song_dataset_2d_with_CacheDataloder(pl.LightningDataModule):
         train_ds_alllabel, train_Nolung_patient_DS, train_NoLiver_patient_DS = climain(data_path=self.datafolder,
                                                                                        Input_worker=self.worker,
                                                                                        mode='train',
-                                                                                       dataset_mode=self.mode)
+                                                                                       dataset_mode=self.mode,
+                                                                                       clean=self.clean)
         val_ds_alllabel, val_Nolung_patient_DS, val_NoLiver_patient_DS = climain(data_path=self.datafolder,
                                                                                  Input_worker=self.worker,
                                                                                  mode='val',
-                                                                                 dataset_mode=self.mode)
+                                                                                 dataset_mode=self.mode,
+                                                                                 clean=self.clean
+                                                                                 )
 
         # val_ds is always 4 patients
         # todo: all fully  1 2

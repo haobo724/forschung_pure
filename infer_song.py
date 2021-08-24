@@ -43,7 +43,7 @@ def infer():
     # infer_xform = Song_dataset_2d_with_CacheDataloder.get_xform(mode="infer")
     # infer_ds = monai.data.CacheDataset(data=val_imgs, transform=infer_xform)
 
-    infer_ds, _, _ = climain(args.data_folder[0], Input_worker=4, mode='test', dataset_mode=5)
+    infer_ds, _, _ = climain(args.data_folder[0], Input_worker=4, mode='test', dataset_mode=5,clean=args.clean)
     infer_loader = monai.data.DataLoader(
         infer_ds,
         batch_size=4,
