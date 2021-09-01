@@ -90,7 +90,7 @@ class BasetRAIN(pl.LightningModule):
 
                 else:
                     if self.datamode == 4:
-                        print('mode4')
+                        # print('mode4')
                         continue
                     else:
                         picked_channel = None
@@ -214,7 +214,7 @@ class BasetRAIN(pl.LightningModule):
         # avg_dice_individual_right_lung = torch.stack([x['dice_individual_right_lung'] for x in outputs]).mean()
 
         # self.train_logger.info(f"Validatoin epoch {self.current_epoch} ends, val_loss = {avg_loss}")
-        self.log('valid/loss', avg_loss, logger=True)
+        self.log('valid_loss', avg_loss, logger=True)
         self.log('valid/recall', avg_recall, logger=True)
         self.log('valid/precision', avg_precision, logger=True)
         # self.log('valid/avg_iou_individual_bg', avg_iou_individual_bg, logger=True)
@@ -331,7 +331,7 @@ class BasetRAIN(pl.LightningModule):
         dice_individual /= picked_channel.shape[0]
         recall /= picked_channel.shape[0]
         iou_summean = torch.sum(iou_individual * self.weights.cuda())
-
+        # iou_test=self.validation_IOU2(picked_channel, y.long())
         result_saved = torch.cat((picked_channel, y), dim=1)
         # result_saved=label2rgb(result_saved.cpu())
 

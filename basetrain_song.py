@@ -100,16 +100,16 @@ def cli_main():
 
     # Ckpt callbacks
     ckpt_callback = ModelCheckpoint(
-        monitor='avg_iousummean',
+        monitor='valid_loss',
         save_top_k=2,
-        mode='max',
+        mode='min',
         save_last=True,
-        filename='{epoch:02d}-{avg_iousummean:.02f}'
+        filename='{epoch:02d}-{valid_loss:.02f}'
     )
-    if not os.path.exists(os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}')):
-        os.makedirs(os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}'))
+    saved_path=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}_',
+                            f'{args.loss}_'+f'clean_{args.clean}_'+f'resume_{args.resume}')
 
-    logger = TensorBoardLogger(save_dir=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}'), name='my_model')
+    logger = TensorBoardLogger(save_dir=saved_path, name='my_model')
     # create trainer using pytorch_lightning
     if args.resume:
         print("Resume")
