@@ -38,8 +38,8 @@ class benchmark_unet_2d(BasetRAIN):
     def __init__(self, hparams):
         super().__init__(hparams)
 
-        self.model = BasicUnet(in_channels=1, out_channels=4, nfilters=32).cuda()
-        # self.model = UNET(in_channels=1, out_channels=4).cuda()
+        # self.model = BasicUnet(in_channels=1, out_channels=4, nfilters=32).cuda()
+        self.model = UNET(in_channels=1, out_channels=4).cuda()
         Loss_weights = [0.5, 1.0, 1.0, 1.0]
         if hparams['loss'] == 'CE':
             self.loss = CELoss(weight=Loss_weights)
@@ -100,13 +100,14 @@ def cli_main():
 
     # Ckpt callbacks
     ckpt_callback = ModelCheckpoint(
-        monitor='valid_loss',
+        # monitor='valid_loss',
+        monitor='avg_iousummean',
         save_top_k=2,
-        mode='min',
+        mode='max',
         save_last=True,
         filename='{epoch:02d}-{valid_loss:.02f}'
     )
-    saved_path=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}_',
+    saved_path=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}',
                             f'{args.loss}_'+f'clean_{args.clean}_'+f'resume_{args.resume}')
 
     logger = TensorBoardLogger(save_dir=saved_path, name='my_model')

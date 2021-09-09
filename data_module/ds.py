@@ -34,7 +34,7 @@ import re
 import monai.transforms as mxform
 import data_module.custom_transform as custom_transform
 from monai.data.utils import list_data_collate
-from torch.utils.data import DataLoader
+from monai.data import DataLoader
 
 
 def leakylabel_generator(img_list, mask_list, leakylabellist, root_str):

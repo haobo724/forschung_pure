@@ -47,12 +47,7 @@ class BasetRAIN(pl.LightningModule):
     def training_step(self, batch, batch_idx, dataset_idx=None):
         x, y = batch["image"], batch["label"]
         z_bactch = batch["leaky"]
-        # if self.modifiy_label_ON:
-        #     lr =self.lr
-        #     if self.current_epoch % 8 ==0 and self.current_epoch // 8 > 0:
-        #         self.lr *=0.8
-        #     if self.lr != lr:
-        #         print("new lr=",self.lr)
+
         y_hat = self(x)
 
         y_copy = y.clone()
@@ -201,32 +196,13 @@ class BasetRAIN(pl.LightningModule):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         avg_recall = torch.stack([x['recall'] for x in outputs]).mean()
         avg_precision = torch.stack([x['precision'] for x in outputs]).mean()
-        # avg_iou_individual_bg = torch.stack([x['iou_individual_bg'] for x in outputs]).mean()
-        # avg_iou_individual_liver = torch.stack([x['iou_individual_liver'] for x in outputs]).mean()
-        # avg_iou_individual_left_lung = torch.stack([x['iou_individual_left_lung'] for x in outputs]).mean()
-        # avg_iou_individual_right_lung = torch.stack([x['iou_individual_right_lung'] for x in outputs]).mean()
         avg_iousummean = torch.stack([x['iou_summean'] for x in outputs]).mean()
         avg_dice_summean = torch.stack([x['dice_summean'] for x in outputs]).mean()
 
-        # avg_dice_individual_bg = torch.stack([x['dice_individual_bg'] for x in outputs]).mean()
-        # avg_dice_individual_liver = torch.stack([x['dice_individual_liver'] for x in outputs]).mean()
-        # avg_dice_individual_left_lung = torch.stack([x['dice_individual_left_lung'] for x in outputs]).mean()
-        # avg_dice_individual_right_lung = torch.stack([x['dice_individual_right_lung'] for x in outputs]).mean()
-
-        # self.train_logger.info(f"Validatoin epoch {self.current_epoch} ends, val_loss = {avg_loss}")
         self.log('valid_loss', avg_loss, logger=True)
         self.log('valid/recall', avg_recall, logger=True)
-        self.log('valid/precision', avg_precision, logger=True)
-        # self.log('valid/avg_iou_individual_bg', avg_iou_individual_bg, logger=True)
-        # self.log('valid/avg_iou_individual_liver', avg_iou_individual_liver, logger=True)
-        # self.log('valid/avg_iou_individual_left_lung', avg_iou_individual_left_lung, logger=True)
-        # self.log('valid/avg_iou_individual_right_lung', avg_iou_individual_right_lung, logger=True)
-        # self.log('valid/avg_dice_individual_bg', avg_dice_individual_bg, logger=True)
-        # self.log('valid/avg_dice_individual_liver', avg_dice_individual_liver, logger=True)
-        # self.log('valid/avg_dice_individual_left_lung', avg_dice_individual_left_lung, logger=True)
-        # self.log('valid/avg_dice_individual_right_lung', avg_dice_individual_right_lung, logger=True)
         self.log('avg_iousummean', avg_iousummean, logger=True)
-        self.log('avg_iousummean', avg_dice_summean, logger=True)
+        self.log('avg_dicesummean', avg_dice_summean, logger=True)
 
     def configure_optimizers(self):
         if self.opt == 'Adam':

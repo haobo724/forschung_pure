@@ -5,7 +5,7 @@ import pytorch_lightning as pl
 import monai.transforms as mxform
 from monai.data.utils import list_data_collate
 import numpy as np
-from torch.utils.data import DataLoader
+from monai.data import DataLoader
 import torch
 from ds import climain
 
