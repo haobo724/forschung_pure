@@ -100,12 +100,12 @@ def cli_main():
 
     # Ckpt callbacks
     ckpt_callback = ModelCheckpoint(
-        # monitor='valid_loss',
-        monitor='avg_iousummean',
+        # monitor='avg_iousummean',
+        monitor='valid_sum_iou',
         save_top_k=2,
-        mode='max',
+        mode="max",
         save_last=True,
-        filename='{epoch:02d}-{valid_loss:.02f}'
+        filename='{epoch:02d}-{valid_iou:.02f}'
     )
     saved_path=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}',
                             f'{args.loss}_'+f'clean_{args.clean}_'+f'resume_{args.resume}')
@@ -117,12 +117,12 @@ def cli_main():
         # net = benchmark_unet_2d(hparams=vars(args)).load_from_checkpoint(args.lastcheckpoint)
         net = ContinueTrain(hparams=vars(args))
         trainer = pl.Trainer.from_argparse_args(args, precision=16, check_val_every_n_epoch=2,
-                                                callbacks=[ckpt_callback], num_sanity_val_steps=0, logger=logger
+                                                callbacks=[ckpt_callback], logger=logger
                                                 )
     else:
         net = benchmark_unet_2d(hparams=vars(args))
         trainer = pl.Trainer.from_argparse_args(args, precision=16, check_val_every_n_epoch=2,
-                                                callbacks=[ckpt_callback], num_sanity_val_steps=0, logger=logger)
+                                                callbacks=[ckpt_callback],  logger=logger)
 
     logging.info(f'Manual logging starts. Model version: {trainer.logger.version}_mode{args.datasetmode}')
 
@@ -130,21 +130,13 @@ def cli_main():
     logging.info(f'dataset from {args.data_folder}')
 
     dm = Song_dataset_2d_with_CacheDataloder(args.data_folder[0],
-                                             worker=0,
+                                             worker=args.worker,
                                              batch_size=args.batch_size,
                                              mode=args.datasetmode,
                                              clean=args.clean)
 
     # dm.setup(stage='fit')
 
-    # training
-    #
-    # lr =trainer.tuner.lr_find(model=net,datamodule=dm)
-
-    # # fig=lr.plot(suggest=True)
-    # # fig.show()
-    # net.lr=lr.suggestion()
-    # print('best initial lr:',net.lr)
     trainer.fit(model=net, datamodule=dm)
 
     logging.info("!!!!!!!!!!!!!!This is the end of the training!!!!!!!!!!!!!!!!!!!!!!")

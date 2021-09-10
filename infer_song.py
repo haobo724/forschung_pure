@@ -31,17 +31,7 @@ def infer():
                 if file.endswith('.ckpt'):
                     modelslist.append(os.path.join(root, file))
         args.ckpt = modelslist[0]
-    # images = sorted(glob.glob(os.path.join(raw_dir, '*_ct.nii.gz')))
-    # labels = sorted(glob.glob(os.path.join(raw_dir, '*_seg.nii.gz')))
-    # assert len(images) == len(labels)
-    # keys = ("image", "label","leaky")
-    #
-    # val_imgs = [
-    #     {keys[0]: img, keys[1]: seg, keys[2]:seg} for img, seg in
-    #     zip(images[350:360], labels[350:360])
-    # ]
-    # infer_xform = Song_dataset_2d_with_CacheDataloder.get_xform(mode="infer")
-    # infer_ds = monai.data.CacheDataset(data=val_imgs, transform=infer_xform)
+
 
     infer_ds, _, _ = climain(args.data_folder[0], Input_worker=4, mode='test', dataset_mode=5,clean=args.clean)
     infer_loader = monai.data.DataLoader(

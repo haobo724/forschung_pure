@@ -195,10 +195,12 @@ class BasetRAIN(pl.LightningModule):
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         avg_recall = torch.stack([x['recall'] for x in outputs]).mean()
-        avg_precision = torch.stack([x['precision'] for x in outputs]).mean()
+        # avg_precision = torch.stack([x['precision'] for x in outputs]).mean()
         avg_iousummean = torch.stack([x['iou_summean'] for x in outputs]).mean()
+        sum_iou = torch.stack([x['iou_summean'] for x in outputs]).sum()
         avg_dice_summean = torch.stack([x['dice_summean'] for x in outputs]).mean()
 
+        self.log('valid_sum_iou', sum_iou, logger=True)
         self.log('valid_loss', avg_loss, logger=True)
         self.log('valid/recall', avg_recall, logger=True)
         self.log('avg_iousummean', avg_iousummean, logger=True)
