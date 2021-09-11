@@ -200,11 +200,11 @@ class BasetRAIN(pl.LightningModule):
         sum_iou = torch.stack([x['iou_summean'] for x in outputs]).sum()
         avg_dice_summean = torch.stack([x['dice_summean'] for x in outputs]).mean()
 
-        self.log('valid_sum_iou', sum_iou, logger=True)
-        self.log('valid_loss', avg_loss, logger=True)
+        self.log('valid/sum_iou', sum_iou, logger=True)
+        self.log('valid/loss', avg_loss, logger=True)
         self.log('valid/recall', avg_recall, logger=True)
-        self.log('avg_iousummean', avg_iousummean, logger=True)
-        self.log('avg_dicesummean', avg_dice_summean, logger=True)
+        self.log('valid/avg_iousummean', avg_iousummean, logger=True)
+        self.log('valid/avg_dicesummean', avg_dice_summean, logger=True)
 
     def configure_optimizers(self):
         if self.opt == 'Adam':

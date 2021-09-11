@@ -101,7 +101,7 @@ def cli_main():
     # Ckpt callbacks
     ckpt_callback = ModelCheckpoint(
         # monitor='avg_iousummean',
-        monitor='valid_sum_iou',
+        monitor='valid/sum_iou',
         save_top_k=2,
         mode="max",
         save_last=True,
