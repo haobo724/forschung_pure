@@ -32,7 +32,7 @@ class BasetRAIN(pl.LightningModule):
         self.validation_recall = torchmetrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_precision = torchmetrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_Accuracy = torchmetrics.Accuracy(num_classes=4)
-        self.validation_IOU2 = torchmetrics.IoU(num_classes=4, absent_score=1)
+        self.validation_IOU2 = torchmetrics.IoU(num_classes=4, absent_score=1,reduction='sum')
         self.validation_IOU = torchmetrics.IoU(num_classes=4, absent_score=1,reduction='none')
         if hparams['datasetmode'] == 4 or hparams['datasetmode'] == 8 or  hparams['datasetmode'] ==6:
             self.modifiy_label_ON = True
@@ -44,7 +44,7 @@ class BasetRAIN(pl.LightningModule):
     def forward(self, x):
         return self.model(x)
 
-    def training_step(self, batch, batch_idx, dataset_idx=None):
+    def training_step(self, batch, batch_idx):
         x, y = batch["image"], batch["label"]
         z_bactch = batch["leaky"]
 
@@ -140,7 +140,7 @@ class BasetRAIN(pl.LightningModule):
         return {"loss": loss}
 
     # def validation_step(self, batch, batch_idx):
-    def validation_step(self, batch, batch_idx, dataset_idx=0):
+    def validation_step(self, batch, batch_idx):
 
         x, y = batch["image"], batch["label"]
         # shape = [batch, channel, w, h]
@@ -196,14 +196,12 @@ class BasetRAIN(pl.LightningModule):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         avg_recall = torch.stack([x['recall'] for x in outputs]).mean()
         # avg_precision = torch.stack([x['precision'] for x in outputs]).mean()
-        avg_iousummean = torch.stack([x['iou_summean'] for x in outputs]).mean()
-        sum_iou = torch.stack([x['iou_summean'] for x in outputs]).sum()
+        sum_iou = torch.stack([x['iou_summean'] for x in outputs]).mean()
         avg_dice_summean = torch.stack([x['dice_summean'] for x in outputs]).mean()
 
         self.log('valid/sum_iou', sum_iou, logger=True)
         self.log('valid/loss', avg_loss, logger=True)
         self.log('valid/recall', avg_recall, logger=True)
-        self.log('valid/avg_iousummean', avg_iousummean, logger=True)
         self.log('valid/avg_dicesummean', avg_dice_summean, logger=True)
 
     def configure_optimizers(self):
