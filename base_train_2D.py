@@ -32,9 +32,9 @@ class BasetRAIN(pl.LightningModule):
         self.validation_recall = torchmetrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_precision = torchmetrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_Accuracy = torchmetrics.Accuracy(num_classes=4)
-        self.validation_IOU2 = torchmetrics.IoU(num_classes=4, absent_score=1,reduction='sum')
-        self.validation_IOU = torchmetrics.IoU(num_classes=4, absent_score=1,reduction='none')
-        if hparams['datasetmode'] == 4 or hparams['datasetmode'] == 8 or  hparams['datasetmode'] ==6:
+        self.validation_IOU2 = torchmetrics.IoU(num_classes=4, absent_score=1, reduction='sum')
+        self.validation_IOU = torchmetrics.IoU(num_classes=4, absent_score=1, reduction='none')
+        if hparams['datasetmode'] == 4 or hparams['datasetmode'] == 8 or hparams['datasetmode'] == 6:
             self.modifiy_label_ON = True
             print(f'[INFO] modifiy_label_ON={self.modifiy_label_ON}')
         else:
@@ -58,7 +58,7 @@ class BasetRAIN(pl.LightningModule):
                 z = float(z)
                 if z != 0:
                     picked_channel = y_hat[idx, ...].argmax(dim=0)
-                    cord_not_sure =picked_channel == z
+                    cord_not_sure = picked_channel == z
                     assert len(picked_channel.size()) == 2
                     '''
                    --------------------x 
@@ -67,25 +67,25 @@ class BasetRAIN(pl.LightningModule):
                     |
                     y
                     '''
-                    cord_zero_InTarget = y[idx,0,...]== 0
+                    cord_zero_InTarget = y[idx, 0, ...] == 0
 
                     # 如果在原groundtruth里是背景才会修改，不是不改
 
-                    realcord=torch.bitwise_and(cord_not_sure,cord_zero_InTarget)
-                    temp= realcord==True
+                    realcord = torch.bitwise_and(cord_not_sure, cord_zero_InTarget)
+                    print('real:', realcord.size())
+
                     # if torch.max(y_copy[idx,...])!=0:
-                    y_copy[idx, 0][realcord==True] = z
+                    y_copy[idx, 0][realcord] = z
 
                     # todo:如果是肺，右肺（label=3）再来一遍
                     if z == 2:
                         cord_not_sure = picked_channel == 3
-                        cord_zero_InTarget = y[idx,0,...] == 0
-                        realcord = torch.bitwise_and(cord_not_sure, cord_zero_InTarget)==True
-                        y_copy[idx, 0][realcord==True] = 3
+                        cord_zero_InTarget = y[idx, 0, ...] == 0
+                        realcord = torch.bitwise_and(cord_not_sure, cord_zero_InTarget)
+                        y_copy[idx, 0][realcord] = 3
 
                 else:
                     if self.datamode == 4:
-                        # print('mode4')
                         continue
                     else:
                         picked_channel = None
@@ -93,18 +93,18 @@ class BasetRAIN(pl.LightningModule):
                         raise ValueError('Data error')
 
                 # predlist.append(picked_channel)
-            # if self.current_epoch>3:
+            # if self.current_epoch > -1:
             #     plt.figure()
             #     if z_bactch[0] == 2:
-            #         text='Lung'
+            #         text = 'Lung'
             #     else:
-            #          text='Liver'
+            #         text = 'Liver'
             #     plt.imshow(x[0, 0, ...].cpu().numpy(), cmap='Blues')
             #     plt.title(f'Input data Missing label={text}')
             #     plt.show()
             #
             #     plt.imshow(predlist[0].cpu().numpy(), cmap='Blues')
-            #     class_pred=torch.unique(predlist[0])
+            #     class_pred = torch.unique(predlist[0])
             #     plt.title(f'Prediction,has{class_pred}')
             #     plt.show()
             #
@@ -113,7 +113,7 @@ class BasetRAIN(pl.LightningModule):
             #     plt.show()
             #
             #     plt.imshow(y_copy[0, 0, ...].cpu().numpy(), cmap='Blues')
-            #     class_pred2=torch.unique(y_copy[0, 0, ...])
+            #     class_pred2 = torch.unique(y_copy[0, 0, ...])
             #
             #     plt.title(f'Simulate non-fully annotated dataset,has{class_pred2}')
             #     plt.show()
@@ -121,10 +121,10 @@ class BasetRAIN(pl.LightningModule):
             #     fig, axs = plt.subplots(1, 4)
             #     for i in range(1):
             #         axs[0].imshow(predlist[i].cpu().numpy(), cmap='Blues')
-            #         if z_bactch[i]==2:
-            #             text='Lung'
+            #         if z_bactch[i] == 2:
+            #             text = 'Lung'
             #         else:
-            #             text='Liver'
+            #             text = 'Liver'
             #         axs[0].set_title(f'Missing label={text}')
             #         axs[1].imshow(y[i, 0, ...].cpu().numpy(), cmap='Blues')
             #         axs[1].set_title(f'Original Ground Truth')
@@ -158,12 +158,11 @@ class BasetRAIN(pl.LightningModule):
         #     dice_individual += dice_score(picked_channel[index, ...], y[index, ...].squeeze(1).long(), reduction='none',
         #                                   bg=True, no_fg_score=1)[:4].float()
         #     recall += self.validation_recall(picked_channel[index, ...], y[index, ...].long())
-        precision =self.validation_precision(picked_channel, y.long())
-        dice_summean =dice_score(picked_channel, y.squeeze(1).long(),
-                                           bg=True, no_fg_score=1).float()
-        recall =self.validation_recall(picked_channel, y.long())
+        precision = self.validation_precision(picked_channel, y.long())
+        dice_summean = dice_score(picked_channel, y.squeeze(1).long(),
+                                  bg=True, no_fg_score=1).float()
+        recall = self.validation_recall(picked_channel, y.long())
         iou_summean = self.validation_IOU2(picked_channel, y.long())
-
         if self.lossflag == 'Dice':
             pred = torch.sigmoid(self(x))
         loss = self.loss.forward(pred, y)
