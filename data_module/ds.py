@@ -392,12 +392,12 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',
                 zip(Fulllabel_str_list_T, Fulllabel_str_list_mask_T)
             ]
             train_ALLlabel_patient_DS = monai.data.Dataset(
-                data=Alllabel_patient_train,
+                data=Alllabel_patient_train[:4],
                 transform=get_xform(mode=mode, leaky='liver'),
             )
 
             train_ALLlabel_patient_DS2 = monai.data.Dataset(
-                data=Alllabel_patient_train,
+                data=Alllabel_patient_train[:4],
                 transform=get_xform(mode=mode, leaky='lung'),
             )
 
@@ -408,7 +408,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',
                 zip(Fulllabel_str_list_V, Fulllabel_str_list_mask_V)
             ]
             val_ALLlabel_patient_DS = monai.data.Dataset(
-                data=Alllabel_patient_val,
+                data=Alllabel_patient_val[:20],
                 transform=get_xform(mode=mode, leaky='all'),
 
             )

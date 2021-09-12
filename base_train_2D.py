@@ -32,8 +32,8 @@ class BasetRAIN(pl.LightningModule):
         self.validation_recall = torchmetrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_precision = torchmetrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_Accuracy = torchmetrics.Accuracy(num_classes=4)
-        self.validation_IOU2 = torchmetrics.IoU(num_classes=4, absent_score=1, reduction='sum')
-        self.validation_IOU = torchmetrics.IoU(num_classes=4, absent_score=1, reduction='none')
+        self.validation_IOU2 = torchmetrics.IoU(num_classes=4, absent_score=0, reduction='sum')
+        self.validation_IOU = torchmetrics.IoU(num_classes=4, absent_score=0, reduction='none')
         if hparams['datasetmode'] == 4 or hparams['datasetmode'] == 8 or hparams['datasetmode'] == 6:
             self.modifiy_label_ON = True
             print(f'[INFO] modifiy_label_ON={self.modifiy_label_ON}')
@@ -72,7 +72,6 @@ class BasetRAIN(pl.LightningModule):
                     # 如果在原groundtruth里是背景才会修改，不是不改
 
                     realcord = torch.bitwise_and(cord_not_sure, cord_zero_InTarget)
-                    print('real:', realcord.size())
 
                     # if torch.max(y_copy[idx,...])!=0:
                     y_copy[idx, 0][realcord] = z
@@ -80,7 +79,7 @@ class BasetRAIN(pl.LightningModule):
                     # todo:如果是肺，右肺（label=3）再来一遍
                     if z == 2:
                         cord_not_sure = picked_channel == 3
-                        cord_zero_InTarget = y[idx, 0, ...] == 0
+                        # cord_zero_InTarget = y[idx, 0, ...] == 0
                         realcord = torch.bitwise_and(cord_not_sure, cord_zero_InTarget)
                         y_copy[idx, 0][realcord] = 3
 
@@ -163,10 +162,10 @@ class BasetRAIN(pl.LightningModule):
                                   bg=True, no_fg_score=1).float()
         recall = self.validation_recall(picked_channel, y.long())
         iou_summean = self.validation_IOU2(picked_channel, y.long())
+        print("iou_summean:",iou_summean)
         if self.lossflag == 'Dice':
             pred = torch.sigmoid(self(x))
         loss = self.loss.forward(pred, y)
-
         returndic = {}
         returndic.setdefault("loss", loss)
         returndic.setdefault("recall", recall)
@@ -195,13 +194,13 @@ class BasetRAIN(pl.LightningModule):
         avg_loss = torch.stack([x['loss'] for x in outputs]).mean()
         avg_recall = torch.stack([x['recall'] for x in outputs]).mean()
         # avg_precision = torch.stack([x['precision'] for x in outputs]).mean()
-        sum_iou = torch.stack([x['iou_summean'] for x in outputs]).mean()
+        sum_iou = torch.stack([x['iou_summean'] for x in outputs]).mean().float()
         avg_dice_summean = torch.stack([x['dice_summean'] for x in outputs]).mean()
-
-        self.log('valid/sum_iou', sum_iou, logger=True)
-        self.log('valid/loss', avg_loss, logger=True)
-        self.log('valid/recall', avg_recall, logger=True)
-        self.log('valid/avg_dicesummean', avg_dice_summean, logger=True)
+        print("epoch_iou_summean:",sum_iou)
+        self.log('valid/sum_iou', 10)
+        self.log('valid/loss', avg_loss)
+        self.log('valid/recall', avg_recall)
+        self.log('valid/avg_dicesummean', avg_dice_summean)
 
     def configure_optimizers(self):
         if self.opt == 'Adam':

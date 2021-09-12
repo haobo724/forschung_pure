@@ -105,7 +105,7 @@ def cli_main():
         save_top_k=2,
         mode="max",
         save_last=True,
-        filename='{epoch:02d}-{valid_iou:.02f}'
+        filename='{epoch:02d}-{valid_iou:06d}'
     )
     saved_path=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}',
                             f'{args.loss}_'+f'clean_{args.clean}_'+f'resume_{args.resume}')
