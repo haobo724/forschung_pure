@@ -1,5 +1,7 @@
 import os
 import sys
+
+import numpy as np
 import torch
 import logging
 import pytorch_lightning as pl
@@ -63,6 +65,7 @@ class benchmark_unet_2d(BasetRAIN):
         return parser
 
 
+
 class ContinueTrain(benchmark_unet_2d):
     def __init__(self, hparams):
         super().__init__(hparams)
@@ -101,11 +104,11 @@ def cli_main():
     # Ckpt callbacks
     ckpt_callback = ModelCheckpoint(
         # monitor='avg_iousummean',
-        monitor='valid/sum_iou',
+        monitor='valid_sum_iou',
         save_top_k=2,
         mode="max",
         save_last=True,
-        filename='{epoch:02d}-{valid_iou:06d}'
+        filename='{epoch:02d}-{valid_iou:.3f}'
     )
     saved_path=os.path.join('.', 'lightning_logs', f'mode{args.datasetmode}',
                             f'{args.loss}_'+f'clean_{args.clean}_'+f'resume_{args.resume}')

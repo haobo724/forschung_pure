@@ -136,6 +136,7 @@ class BasetRAIN(pl.LightningModule):
             y_hat = torch.sigmoid(y_hat)
         loss = self.loss.forward(y_hat, y_copy)
         self.log("loss", loss)
+
         return {"loss": loss}
 
     # def validation_step(self, batch, batch_idx):
@@ -181,6 +182,7 @@ class BasetRAIN(pl.LightningModule):
         # returndic.setdefault("dice_individual_liver", dice_individual[1])
         # returndic.setdefault("dice_individual_left_lung", dice_individual[2])
         # returndic.setdefault("dice_individual_right_lung", dice_individual[3])
+        self.log('valid_sum_iou', iou_summean,on_epoch=True,on_step=False, logger=True)
 
         return returndic
 
@@ -196,11 +198,12 @@ class BasetRAIN(pl.LightningModule):
         # avg_precision = torch.stack([x['precision'] for x in outputs]).mean()
         sum_iou = torch.stack([x['iou_summean'] for x in outputs]).mean().float()
         avg_dice_summean = torch.stack([x['dice_summean'] for x in outputs]).mean()
-        print("epoch_iou_summean:",sum_iou)
-        self.log('valid/sum_iou', 10)
-        self.log('valid/loss', avg_loss)
-        self.log('valid/recall', avg_recall)
-        self.log('valid/avg_dicesummean', avg_dice_summean)
+
+        # print("epoch_iou_summean:",np.float(sum_iou))
+        # self.log('valid_sum_iou', np.float(sum_iou), logger=True)
+        # self.log('valid/loss', avg_loss)
+        # self.log('valid/recall', avg_recall)
+        # self.log('valid/avg_dicesummean', avg_dice_summean)
 
     def configure_optimizers(self):
         if self.opt == 'Adam':
