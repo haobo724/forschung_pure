@@ -1,112 +1,56 @@
-import time
-
+from tensorboard.backend.event_processing import event_accumulator
+import argparse,os
+import pandas as pd
+from matplotlib import pyplot
 import numpy as np
-import torch
-# from torchvision import transforms as trans
-from measures import calculate_eval_matrix, calculate_union, calculate_intersection
-import monai
-import cv2
-import torchmetrics.functional as f
-import matplotlib.pyplot as plt
-import pycuda
-from collections import Counter
-import albumentations as trans
+from tqdm import tqdm
+def get_list(data):
+    data_list=[]
+    for i in data:
+        data_list.append(i.value)
+    return data_list
 
-# pred=np.random.randint(0,4,(152,407,407))
-# print(np.max(pred))
-# print(np.min(pred))
-# target=np.random.randint(0,4,(152,407,407))
-#
-# mat=calculate_eval_matrix(4,pred,pred)
-# iou=calculate_intersection(mat)/calculate_union(mat)
-# print(iou)
+def main():
+    # load log data
+    parser = argparse.ArgumentParser(description='Export tensorboard data')
+    parser.add_argument('--in-path', type=str, default=r'F:\Forschung\multiorganseg\tensorboard', help='Tensorboard event files or a single tensorboard '
+                                                                   'file location')
+    parser.add_argument('--ex-path', type=str, default=r'F:\Forschung\multiorganseg\others\result.csv', help='location to save the exported data')
 
-# from sklearn.preprocessing import LabelEncoder
-# label=LabelEncoder()
-# mask_path=r'F:\PixelAnnotationTool-master\PixelAnnotationTool\scripts_to_build\build\x64\PixelAnnotationTool_x64_v1.4.0-18-g4920f8e\images_test\road1_watershed_mask.png'
-# mask=cv2.imread(mask_path,0)
-# new_mask=label.fit_transform(mask.reshape(-1,1))
-# label_detail=np.unique(new_mask)
-# print(mask.shape)
-# print(label_detail)
-transform_demo = trans.Compose([
-    # trans.ToPILImage(),
-    trans.Resize(256, 256),
-    # trans.ColorJitter(brightness=1,contrast=0,saturation=0.5,hue=0.5),
-    trans.Normalize(mean=[0.0, 0.0, 0.0], std=[1.0, 1.0, 1.0], max_pixel_value=255)
-    trans.
+    args = parser.parse_args()
+    path_list= os.listdir(args.in_path)
+    mode1,mode2,mode3,mode4,mode5,mode6=[],[],[],[],[],[]
+    modeList=[mode1,mode2,mode3,mode4,mode5,mode6]
+    a=[]
+    for path,data in zip (path_list,modeList):
+        event_data = event_accumulator.EventAccumulator(os.path.join(args.in_path,path))  # a python interface for loading Event data
+        event_data.Reload()  # synchronously loads all of the data written so far b
+        # keys = event_data.scalars.Keys()  # get all tags,save in a list
+        temp=event_data.scalars.Items('valid/loss')
+        data=get_list(temp)
+        a.append(data)
+        # print(data[:20])
+    fig = pyplot.figure()
+    # pyplot.subplot(121)
+    pyplot.title("valid/loss", fontsize=15)  # 设置子图标题
+    color_map=['b', 'g', 'r', 'c', 'm','y']
+    label_map=['mode1', 'mode2', 'mode3', 'mode4', 'mode5','mode6']
 
-])
+    for i,c,l in zip (a,color_map,label_map):
+        print(len(i))
+        idx=np.arange(0,len(i))
+        pyplot.plot(idx, i, c, label=l)
+    pyplot.legend()
+    pyplot.grid()
+    pyplot.show()
+    # df['loss'] = pd.DataFrame(i.value)
+    # for key in tqdm(keys):
+    #     # print(key)
+    #     # if key == 'train/total_loss_iter':  # Other attributes' timestamp is epoch.Ignore it for the format of csv file
+    #     df[key] = pd.DataFrame(event_data.Scalars(key)).value
 
-img = cv2.imread(r'F:\Cam62-71\Cam62-71\20181215-00.11\img_00.11.31.jpg')
-img_resize = cv2.resize(img, (256, 256)).astype(np.uint8)
+    # df.to_csv(args.ex_path)
 
-print(img_resize.shape)
-img_trans = transform_demo(image=img)['image'] * 255
-
-print(img_trans.shape)
-
-# img_trans=np.moveaxis(img_trans,0,2)
-img_cat = np.concatenate((img_trans.astype(np.uint8), img_resize), axis=1)
-
-cv2.imshow('hi', img_cat)
-cv2.waitKey()
-
-# c=monai.transforms.Compose(
-#     [monai.transforms.LoadImaged('image'),
-#      monai.transforms.CastToTyped('image',dtype=np.uint8),
-#
-#     monai.transforms.ToTensord('image')]
-# )
-
-
-# a = monai.transforms.LoadImaged(r(a, dtype=np.uint8)
-# a= 'F:\Forschung\multiorganseg\data\train_2D\2300088WW0_448_seg.nii.gz')
-# a = monai.transforms.CastToTyped
-
-# a=monai.transforms.convert_to_numpy(a)
-# d={'image':r'F:\Forschung\multiorganseg\data\train_2D\2300088WW0_448_seg.nii.gz'}
-# result = c(d)
-# img=result['image']
-# print(img.size())
-#
-#
-# x=[0,4,1,4]
-# y=[2,2,4,5]
-#
-# idx=  (a[x,y]==10)
-# i=torch.where(idx==True)
-#
-# print(i)
-
-
-# t= torch.tensor([10])
-# x = torch.where(a==10)[0]
-# y = torch.where(a==10)[1]
-#
-# for i,j in zip (x,y):
-#     print(i,j)
-#     a[i,j]=304
-#
-#
-# # print(a[cc[0],cc[1]])
-# print(a[0,2])
-# print(a[4,2])
-
-# def load(path=None):
-#     print("loaded")
-#     with open("./lungrecord.pkl", 'rb') as f:
-#         tmp = pickle.load(f)
-#     return tmp
-# a=np.squeeze(load())
-# b=np.zeros_like(a)
-# c=np.zeros_like(a)
-#
-# # cmap=
-# result = Counter(a)
-# print(result)
-# x=np.arange(a.shape[0])
-# plt.scatter( x,a,c=a.astype(np.uint8), s=1)
-# plt.colorbar()
-#
-# plt.show()
+    print("Tensorboard data exported successfully")
+if __name__ == '__main__':
+    main()
