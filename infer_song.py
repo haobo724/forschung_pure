@@ -36,9 +36,10 @@ def infer():
     infer_ds, _, _ = climain(args.data_folder[0], Input_worker=4, mode='test', dataset_mode=5,clean=args.clean)
     infer_loader = monai.data.DataLoader(
         infer_ds,
+        shuffle=False,
         batch_size=4,
         num_workers=0,
-        pin_memory=torch.cuda.is_available(),
+        # pin_memory=torch.cuda.is_available(),
         collate_fn=pad_list_data_collate
 
     )

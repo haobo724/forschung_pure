@@ -263,12 +263,14 @@ class BasetRAIN(pl.LightningModule):
             但是不能保证一个series里每次运行生成的colormap都一样，或许可以用种子点？
             反正类少还是可以考虑用这个
                     '''
-            color_map = [[255, 0, 0], [255, 255, 0], [0, 0, 255]]
-            for label in [1, 2, 3]:
-                cord_1 = torch.where(img[:, 0, ...] == label)
-                img[:, 0, cord_1[1], cord_1[2]] = color_map[label - 1][0]
-                img[:, 1, cord_1[1], cord_1[2]] = color_map[label - 1][1]
-                img[:, 2, cord_1[1], cord_1[2]] = color_map[label - 1][2]
+            color_map = [[247,251,255],[171, 207, 209], [55, 135, 192], [8, 48, 107]]
+            print('shape:',img.size())
+            for i in range(img.size()[0]):
+                for label in range(4):
+                    cord_1 = torch.where(img[i, 0, ...] == label)
+                    img[i, 0, cord_1[0], cord_1[1]] = color_map[label ][0]
+                    img[i, 1, cord_1[0], cord_1[1]] = color_map[label ][1]
+                    img[i, 2, cord_1[0], cord_1[1]] = color_map[label ][2]
             return img
 
         def label2rgb(img):
@@ -308,7 +310,6 @@ class BasetRAIN(pl.LightningModule):
         dice_individual /= picked_channel.shape[0]
         recall /= picked_channel.shape[0]
         iou_summean = torch.sum(iou_individual * self.weights.cuda())
-        # iou_test=self.validation_IOU2(picked_channel, y.long())
         result_saved = torch.cat((picked_channel, y), dim=1)
         # result_saved=label2rgb(result_saved.cpu())
 
@@ -316,7 +317,9 @@ class BasetRAIN(pl.LightningModule):
 
         result_saved = torch.hstack(
             (result_saved, result_saved, result_saved))
-        result_saved = mapping_color(result_saved).cpu().float()
+        # print(torch.unique(result_saved))
+        result_saved = mapping_color(result_saved).cpu().float()/255
+
         folder = "saved_images/"
         if not os.path.exists(folder):
             os.makedirs(folder)
