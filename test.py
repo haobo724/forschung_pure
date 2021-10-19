@@ -28,17 +28,23 @@ def main():
     modeList = [mode1, mode2, mode3, mode4, mode5, mode6]
     a = []
     for path, data in zip(path_list, modeList):
+        if os.path.join(args.in_path, path)==r'F:\Forschung\multiorganseg\tensorboard\autotensor.bat':
+            print('!')
+            continue
         event_data = event_accumulator.EventAccumulator(
             os.path.join(args.in_path, path))  # a python interface for loading Event data
         event_data.Reload()  # synchronously loads all of the data written so far b
         # keys = event_data.scalars.Keys()  # get all tags,save in a list
-        temp = event_data.scalars.Items('valid/loss')
+        try:
+            temp = event_data.scalars.Items('train/loss')
+        except:
+            print(event_data.scalars.Keys())
         data = get_list(temp)
         a.append(data)
         # print(data[:20])
     fig = pyplot.figure()
     # pyplot.subplot(121)
-    pyplot.title("valid/loss", fontsize=15)  # 设置子图标题
+    pyplot.title("train/loss", fontsize=15)  # 设置子图标题
     color_map = ['b', 'g', 'r', 'c', 'm', 'y']
     label_map = ['mode1', 'mode2', 'mode3', 'mode4', 'mode5', 'mode6']
 
@@ -75,11 +81,14 @@ def plot_bar():
     pyplot.xticks(index+0.3,['bg','liver','left lung','right lung'],fontsize=25)
     pyplot.yticks(fontsize=25)
     pyplot.ylim(0,1.1)
-    pyplot.xlabel('label class')
-    pyplot.ylabel('IoU')
+    pyplot.xlabel('label class',fontsize=25)
+    pyplot.ylabel('IoU',fontsize=25)
     pyplot.title('IoU comparison of four classes in five different modes ',fontsize=30)
-    pyplot.legend()
+    pyplot.legend(prop={'size': 25})
     pyplot.show()
-
+def calculate():
+    a=[0.99587291, 0.93394644, 0.96358706 ,0.93609908]
+    print(sum(a))
+    print([round(i,3) for i in a])
 if __name__ == '__main__':
     plot_bar()

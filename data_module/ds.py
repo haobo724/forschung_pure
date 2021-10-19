@@ -144,7 +144,6 @@ def get_xform(mode="train", keys=("image", "label", "leaky"), leaky=None, leakyl
         # # mxform.Spacingd(keys, pixdim=[0.89, 0.89, 1.5], mode=("bilinear", "nearest"))
         # # mxform.Resized(keys, spatial_size=(256,256), mode='nearest')
         mxform.SpatialPadd(keys[:2], spatial_size=(512, 512), mode="edge"),
-
         mxform.CenterSpatialCropd(keys[:2], roi_size=[512, 512]),
     ]
     if mode == "train":
@@ -166,7 +165,7 @@ def get_xform(mode="train", keys=("image", "label", "leaky"), leaky=None, leakyl
     elif mode == "val":
         dtype = (np.float32, np.float32)
     elif mode == "test":
-        xforms = xforms[:-2]
+        # xforms = xforms[:-2]
         dtype = (np.float32, np.float32)
 
     if leaky == 'liver':
@@ -295,7 +294,7 @@ def Part_Return(Nolung_str_list, NoLiver_str_list,
 
 
 def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',
-            Input_worker=4, mode='train', dataset_mode=6,clean=False):
+            Input_worker=4, mode='train', dataset_mode=6, clean=False):
     '''
     根据传入不同的datasetmode返回不同组成的dataset
     根据传入不同的mode返回train 或 val 或test
@@ -318,7 +317,6 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',
                 pickle.dump((img_list, mask_list), f)
     else:
         print(f'{mode} dataset is not cleaned')
-
 
     patient_name, patient_num = getpatient_name(img_list)
     patient_name = sorted(patient_name)
@@ -354,7 +352,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',
 
     if dataset_mode == 5:
         print(f'[INFO] TEST Dataset_mode: {dataset_mode}')
-        fulllabeled_name_sub_T = patient_name[30:31]
+        fulllabeled_name_sub_T = patient_name[30:]
 
         Fulllabel_str_list_T, Fulllabel_str_list_mask_T = leakylabel_generator(img_list, mask_list,
                                                                                fulllabeled_name_sub_T,
@@ -365,10 +363,13 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',
             # zip(Fulllabel_str_list_T[350:360]+Fulllabel_str_list_T[150:155], Fulllabel_str_list_mask_T[350:360]+Fulllabel_str_list_mask_T[150:155])
             zip(Fulllabel_str_list_T, Fulllabel_str_list_mask_T)
         ]
-        test_ALLlabel_patient_DS = monai.data.CacheDataset(
+        test_ALLlabel_patient_DS = monai.data.SmartCacheDataset(
             data=test_patient,
             transform=get_xform(mode='test', leaky='all'),
-            num_workers=Input_worker
+            num_init_workers=Input_worker,
+            shuffle=True,
+            seed=1234,
+            replace_rate=1,
 
         )
         return test_ALLlabel_patient_DS, [], []
@@ -420,7 +421,7 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',
         fulllabeled_name_sub_T = patient_name[:8] + patient_name[10:18] + patient_name[
                                                                           20:28] if dataset_mode == 1 else patient_name[
                                                                                                            :8]
-        fulllabeled_name_sub_V = patient_name[18:20] + patient_name[28:30]
+        fulllabeled_name_sub_V =patient_name[8:10]+ patient_name[18:20] + patient_name[28:30]
 
         Fulllabel_str_list_T, Fulllabel_str_list_mask_T = leakylabel_generator(img_list, mask_list,
                                                                                fulllabeled_name_sub_T,

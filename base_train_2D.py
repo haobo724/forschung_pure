@@ -264,7 +264,6 @@ class BasetRAIN(pl.LightningModule):
             反正类少还是可以考虑用这个
                     '''
             color_map = [[247,251,255],[171, 207, 209], [55, 135, 192], [8, 48, 107]]
-            print('shape:',img.size())
             for i in range(img.size()[0]):
                 for label in range(4):
                     cord_1 = torch.where(img[i, 0, ...] == label)
@@ -310,22 +309,23 @@ class BasetRAIN(pl.LightningModule):
         dice_individual /= picked_channel.shape[0]
         recall /= picked_channel.shape[0]
         iou_summean = torch.sum(iou_individual * self.weights.cuda())
-        result_saved = torch.cat((picked_channel, y), dim=1)
-        # result_saved=label2rgb(result_saved.cpu())
 
-        result_saved = torch.unsqueeze(result_saved, dim=1)
-
-        result_saved = torch.hstack(
-            (result_saved, result_saved, result_saved))
-        # print(torch.unique(result_saved))
-        result_saved = mapping_color(result_saved).cpu().float()/255
-
-        folder = "saved_images/"
-        if not os.path.exists(folder):
-            os.makedirs(folder)
-        torchvision.utils.save_image(
-            result_saved, f"{folder}/infer_result{batch_idx}.jpg"
-        )
+        # result_saved = torch.cat((picked_channel, y), dim=1)
+        # # result_saved=label2rgb(result_saved.cpu())
+        #
+        # result_saved = torch.unsqueeze(result_saved, dim=1)
+        #
+        # result_saved = torch.hstack(
+        #     (result_saved, result_saved, result_saved))
+        # # print(torch.unique(result_saved))
+        # result_saved = mapping_color(result_saved).cpu().float()/255
+        #
+        # folder = "saved_images/"
+        # if not os.path.exists(folder):
+        #     os.makedirs(folder)
+        # torchvision.utils.save_image(
+        #     result_saved, f"{folder}/infer_result{batch_idx}.jpg"
+        # )
 
         returndic = {}
         returndic.setdefault("recall", recall)
@@ -350,7 +350,8 @@ class BasetRAIN(pl.LightningModule):
 
         '''
         print('test epoch end')
-
+        # print(outputs[0]['picked_channel'].size())
+        # print(outputs[0]['y'].size())
         outpick = torch.cat([x['picked_channel'] for x in outputs], dim=0)
         outy = torch.cat([x['y'] for x in outputs], dim=0)
         mat = calculate_eval_matrix(num_cls=4, labels=outy.cpu().numpy(), predictions=outpick.cpu().numpy())
@@ -376,14 +377,14 @@ class BasetRAIN(pl.LightningModule):
         print(iou)
         print(dice)
 
-    def on_test_end(self) -> None:
-        if os.path.exists("lungrecord.pkl"):
-            print('del..lungrecord.pkl')
-            os.remove("lungrecord.pkl")
-        with open("lungrecord.pkl", 'wb') as f:
-            pickle.dump(self.lungrecord, f)
-        # print(self.lungrecord.shape)
-        print('test end')
+    # def on_test_end(self) -> None:
+    #     if os.path.exists("lungrecord.pkl"):
+    #         print('del..lungrecord.pkl')
+    #         os.remove("lungrecord.pkl")
+    #     with open("lungrecord.pkl", 'wb') as f:
+    #         pickle.dump(self.lungrecord, f)
+    #     # print(self.lungrecord.shape)
+    #     print('test end')
 
 
 if __name__ == "__main__":

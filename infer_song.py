@@ -37,17 +37,22 @@ def infer():
     infer_loader = monai.data.DataLoader(
         infer_ds,
         shuffle=False,
+
         batch_size=4,
         num_workers=0,
-        # pin_memory=torch.cuda.is_available(),
+        pin_memory=torch.cuda.is_available(),
         collate_fn=pad_list_data_collate
 
     )
+
     test = torch.load(args.ckpt)
     datamode = test['hyper_parameters']['datasetmode']
     loss_method = test['hyper_parameters']['loss']
     args.loss=loss_method
     print(args.loss)
+
+    if args.loss!='CE':
+        input()
     model = benchmark_unet_2d.load_from_checkpoint(args.ckpt, hparams=vars(args))
 
     start_time = time.time()
@@ -63,6 +68,7 @@ def infer():
 
 if __name__ == "__main__":
     # root,dirs,files=os.walk('./mostoolkit/lightning_logs/version_65')
+    pl.seed_everything(1234)
 
     infer()
 
