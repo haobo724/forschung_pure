@@ -363,15 +363,22 @@ def climain(data_path=r'F:\Forschung\multiorganseg\data\train_2D',
             # zip(Fulllabel_str_list_T[350:360]+Fulllabel_str_list_T[150:155], Fulllabel_str_list_mask_T[350:360]+Fulllabel_str_list_mask_T[150:155])
             zip(Fulllabel_str_list_T, Fulllabel_str_list_mask_T)
         ]
-        test_ALLlabel_patient_DS = monai.data.SmartCacheDataset(
+        test_ALLlabel_patient_DS = monai.data.Dataset(
             data=test_patient,
             transform=get_xform(mode='test', leaky='all'),
-            num_init_workers=Input_worker,
-            shuffle=True,
-            seed=1234,
-            replace_rate=1,
+
 
         )
+        # test_ALLlabel_patient_DS = monai.data.SmartCacheDataset(
+        #     data=test_patient[:90],
+        #     transform=get_xform(mode='test', leaky='all'),
+        #
+        #     num_init_workers=Input_worker,
+        #     shuffle=True,
+        #     seed=1234,
+        #     replace_rate=1,
+        #
+        # )
         return test_ALLlabel_patient_DS, [], []
 
     if dataset_mode == 6:

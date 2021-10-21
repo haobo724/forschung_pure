@@ -91,4 +91,4 @@ def calculate():
     print(sum(a))
     print([round(i,3) for i in a])
 if __name__ == '__main__':
-    plot_bar()
+    main()

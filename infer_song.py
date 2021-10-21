@@ -39,7 +39,7 @@ def infer():
         shuffle=False,
 
         batch_size=4,
-        num_workers=0,
+        num_workers=4,
         pin_memory=torch.cuda.is_available(),
         collate_fn=pad_list_data_collate
 
@@ -50,9 +50,9 @@ def infer():
     loss_method = test['hyper_parameters']['loss']
     args.loss=loss_method
     print(args.loss)
-
-    if args.loss!='CE':
-        input()
+    args.infer_mode=datamode
+    # if args.loss!='CE':
+    #     input()
     model = benchmark_unet_2d.load_from_checkpoint(args.ckpt, hparams=vars(args))
 
     start_time = time.time()

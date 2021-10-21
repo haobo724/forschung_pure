@@ -28,6 +28,7 @@ class BasetRAIN(pl.LightningModule):
         self.opt = hparams['opt']
         self.lungrecord = np.empty((1, 0))
         self.datamode = hparams['datasetmode']
+        self.infer_datamode = hparams['infer_mode']
         # self.train_logger = logging.getLogger(__name__)
         self.validation_recall = torchmetrics.Recall(average='macro', mdmc_average='samplewise', num_classes=4)
         self.validation_precision = torchmetrics.Precision(average='macro', mdmc_average='samplewise', num_classes=4)
@@ -295,20 +296,20 @@ class BasetRAIN(pl.LightningModule):
         precision = 0
         dice_individual = 0
         acc = 0
-        for index in range(picked_channel.shape[0]):
-            iou_individual += self.validation_IOU(picked_channel[index, ...], y[index, ...].int()).float()
-            precision += self.validation_precision(picked_channel[index, ...], y[index, ...].int())
-            acc += self.validation_Accuracy(picked_channel[index, ...], y[index, ...].int())
-
-            dice_individual += dice_score(picked_channel[index, ...], y[index, ...].squeeze(1).int(), reduction='none',
-                                          bg=True, no_fg_score=1)[:4].float()
-            recall += self.validation_recall(picked_channel[index, ...], y[index, ...].int())
-        iou_individual /= picked_channel.shape[0]
-        precision /= picked_channel.shape[0]
-        acc /= picked_channel.shape[0]
-        dice_individual /= picked_channel.shape[0]
-        recall /= picked_channel.shape[0]
-        iou_summean = torch.sum(iou_individual * self.weights.cuda())
+        # for index in range(picked_channel.shape[0]):
+        #     iou_individual += self.validation_IOU(picked_channel[index, ...], y[index, ...].int()).float()
+        #     precision += self.validation_precision(picked_channel[index, ...], y[index, ...].int())
+        #     acc += self.validation_Accuracy(picked_channel[index, ...], y[index, ...].int())
+        #
+        #     dice_individual += dice_score(picked_channel[index, ...], y[index, ...].squeeze(1).int(), reduction='none',
+        #                                   bg=True, no_fg_score=1)[:4].float()
+        #     recall += self.validation_recall(picked_channel[index, ...], y[index, ...].int())
+        # iou_individual /= picked_channel.shape[0]
+        # precision /= picked_channel.shape[0]
+        # acc /= picked_channel.shape[0]
+        # dice_individual /= picked_channel.shape[0]
+        # recall /= picked_channel.shape[0]
+        # iou_summean = torch.sum(iou_individual * self.weights.cuda())
 
         # result_saved = torch.cat((picked_channel, y), dim=1)
         # # result_saved=label2rgb(result_saved.cpu())
@@ -328,18 +329,18 @@ class BasetRAIN(pl.LightningModule):
         # )
 
         returndic = {}
-        returndic.setdefault("recall", recall)
-        returndic.setdefault("precision", precision)
-        returndic.setdefault("acc", acc)
+        # returndic.setdefault("recall", recall)
+        # returndic.setdefault("precision", precision)
+        # returndic.setdefault("acc", acc)
 
         returndic.setdefault("picked_channel", picked_channel)
         returndic.setdefault("y", y.int())
         #
-        returndic.setdefault("iou_individual_bg", iou_individual[0])
-        returndic.setdefault("iou_individual_liver", iou_individual[1])
-        returndic.setdefault("iou_individual_left_lung", iou_individual[2])
-        returndic.setdefault("iou_individual_right_lung", iou_individual[3])
-        returndic.setdefault("iou_summean", iou_summean)
+        # returndic.setdefault("iou_individual_bg", iou_individual[0])
+        # returndic.setdefault("iou_individual_liver", iou_individual[1])
+        # returndic.setdefault("iou_individual_left_lung", iou_individual[2])
+        # returndic.setdefault("iou_individual_right_lung", iou_individual[3])
+        # returndic.setdefault("iou_summean", iou_summean)
 
         return returndic
 
@@ -352,28 +353,37 @@ class BasetRAIN(pl.LightningModule):
         print('test epoch end')
         # print(outputs[0]['picked_channel'].size())
         # print(outputs[0]['y'].size())
+
         outpick = torch.cat([x['picked_channel'] for x in outputs], dim=0)
         outy = torch.cat([x['y'] for x in outputs], dim=0)
-        mat = calculate_eval_matrix(num_cls=4, labels=outy.cpu().numpy(), predictions=outpick.cpu().numpy())
-        iou = calculate_IoU(mat)
-        dice = calculate_dice(mat)
-
-        avg_iou_individual_bg = torch.stack([x['iou_individual_bg'] for x in outputs]).mean()
-        avg_acc = torch.stack([x['acc'] for x in outputs]).mean()
-        avg_iou_individual_liver = torch.stack([x['iou_individual_liver'] for x in outputs]).mean()
-        avg_iou_individual_left_lung = torch.stack([x['iou_individual_left_lung'] for x in outputs]).mean()
-        avg_iou_individual_right_lung = torch.stack([x['iou_individual_right_lung'] for x in outputs]).mean()
-        avg_iousummean = torch.stack([x['iou_summean'] for x in outputs]).mean()
-        self.log('avg_iousummean', avg_iousummean, logger=True)
-        self.log('acc', avg_acc, logger=True)
-        self.log('valid/avg_iou_individual_bg', avg_iou_individual_bg, logger=True)
-        self.log('valid/avg_iou_individual_liver', avg_iou_individual_liver, logger=True)
-        self.log('valid/avg_iou_individual_left_lung', avg_iou_individual_left_lung, logger=True)
-        self.log('valid/avg_iou_individual_right_lung', avg_iou_individual_right_lung, logger=True)
-        with open("saved_images/log.txt", "w") as t:
+        print(outy.size())
+        # mat = calculate_eval_matrix(num_cls=4, labels=outy.cpu().numpy(), predictions=outpick.cpu().numpy())
+        mat = calculate_eval_matrix(num_cls=4, gt=outy.cpu().numpy(),  eval_vol=outpick.cpu().numpy(),batch_size=100 )
+        iou = calculate_IoU(mat)[1:]
+        print(np.around(np.array(iou),decimals=3))
+        dice = calculate_dice(mat)[1:]
+        #
+        # avg_iou_individual_bg = torch.stack([x['iou_individual_bg'] for x in outputs]).mean()
+        # avg_acc = torch.stack([x['acc'] for x in outputs]).mean()
+        # avg_iou_individual_liver = torch.stack([x['iou_individual_liver'] for x in outputs]).mean()
+        # avg_iou_individual_left_lung = torch.stack([x['iou_individual_left_lung'] for x in outputs]).mean()
+        # avg_iou_individual_right_lung = torch.stack([x['iou_individual_right_lung'] for x in outputs]).mean()
+        # avg_iousummean = torch.stack([x['iou_summean'] for x in outputs]).mean()
+        # self.log('avg_iousummean', avg_iousummean, logger=True)
+        # self.log('acc', avg_acc, logger=True)
+        # self.log('valid/avg_iou_individual_bg', avg_iou_individual_bg, logger=True)
+        # self.log('valid/avg_iou_individual_liver', avg_iou_individual_liver, logger=True)
+        # self.log('valid/avg_iou_individual_left_lung', avg_iou_individual_left_lung, logger=True)
+        # self.log('valid/avg_iou_individual_right_lung', avg_iou_individual_right_lung, logger=True)
+        folder = "saved_images/"
+        if not os.path.exists(folder):
+            os.makedirs(folder)
+        with open(f"saved_images/log_{str(self.infer_datamode)}.txt", "w") as t:
             t.writelines('iou:' + str(iou) + '\n')
             t.writelines('dice:' + str(dice) + '\n')
             t.writelines('avg_iousummean:' + str(np.sum(iou)))
+            t.writelines('avg_DICEummean:' + str(np.sum(dice)))
+
         print(iou)
         print(dice)
 

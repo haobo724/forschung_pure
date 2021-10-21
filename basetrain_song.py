@@ -62,6 +62,7 @@ class benchmark_unet_2d(BasetRAIN):
         parser.add_argument('--lr', type=float, default=1e-4)
         parser.add_argument('--loss', type=str, default='CE')
         parser.add_argument('--clean', type=bool, default=False)
+        parser.add_argument('--infer_mode', type=str, default='Unknown')
         return parser
 
 

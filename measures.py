@@ -1,6 +1,6 @@
 import numpy as np
 from abc import ABC, abstractmethod
-import time
+import tqdm
 
 '''reference: FAU deep learning exercise'''
 
@@ -61,26 +61,51 @@ class MeasureBase(ABC):
         self._eval_mat = x
 
 
-def calculate_eval_matrix(num_cls, labels, predictions):
-    # labels & predictions: 1D reshaped vector
-    # return:
-    #       eval_mat[n_batch, i, j]: num of pixels of class i, predicted as class j
-    #print(labels.shape, predictions.shape)
-    assert labels.shape == predictions.shape
+# def calculate_eval_matrix(num_cls, labels, predictions):
+#     # labels & predictions: 1D reshaped vector
+#     # return:
+#     #       eval_mat[n_batch, i, j]: num of pixels of class i, predicted as class j
+#     #print(labels.shape, predictions.shape)
+#     assert labels.shape == predictions.shape
+#
+#     # convert to same data type
+#     n_batch = labels.shape[0]
+#
+#     labels = labels.astype(np.uint8).flatten()
+#     predictions = predictions.astype(np.uint8).flatten()
+#
+#     eval_mat = np.zeros([num_cls, num_cls])
+#     for i in range(num_cls):
+#         for j in range(num_cls):
+#                 #eval_mat[b, i, j] = np.sum(labels==i & predictions==j)
+#             eval_mat[i, j] = np.sum(np.logical_and(labels==i, predictions==j))
+#     return eval_mat
 
-    # convert to same data type
-    n_batch = labels.shape[0]
 
-    labels = labels.astype(np.uint8).flatten()
-    predictions = predictions.astype(np.uint8).flatten()
+def calculate_eval_matrix(num_cls, gt, eval_vol,batch_size=100):
+    # flatten the inputs
+    confusion = np.zeros([num_cls, num_cls])
 
-    eval_mat = np.zeros([num_cls, num_cls])
-    for i in range(num_cls):
-        for j in range(num_cls):
-                #eval_mat[b, i, j] = np.sum(labels==i & predictions==j)
-            eval_mat[i, j] = np.sum(np.logical_and(labels==i, predictions==j))
-    return eval_mat
+    start = 0
+    end = batch_size
+    pbar = tqdm.tqdm(total=int(eval_vol.shape[0]) + 1)
+    while start < eval_vol.shape[0]:
+        if end > eval_vol.shape[0]: end = eval_vol.shape[0]
+        gt_batch = gt[..., start: end]
+        eval_vol_batch = eval_vol[..., start: end]
 
+        gt_batch = np.array(gt_batch).flatten()
+        eval_vol_batch = np.array(eval_vol_batch).flatten()
+        # confusion[i, j]: num of pixels of class i, predicted as class j
+        for i in range(num_cls):
+            for j in range(num_cls):
+                confusion[i, j] += np.sum(np.logical_and(gt_batch == i, eval_vol_batch == j))
+        start = end
+        end = start + batch_size
+        pbar.update(1)
+
+    pbar.close()
+    return confusion.astype(np.int32)
 
 def calculate_union(eval_mat):
     # calculate the union for IoU evaluation
@@ -99,11 +124,11 @@ def calculate_intersection(eval_mat):
     return np.diagonal(eval_mat, axis1=0, axis2=1)
 
 def calculate_IoU(eval_mat):
-    return calculate_intersection(eval_mat)/calculate_union(eval_mat)
+    return np.around(calculate_intersection(eval_mat)/calculate_union(eval_mat),decimals=3)
 
 def calculate_dice(eval_mat):
     TP=calculate_intersection(eval_mat)
-    return TP*2/(calculate_union(eval_mat)+TP)
+    return np.around(TP*2/(calculate_union(eval_mat)+TP),decimals=3)
 
 
 class Accuracy(MeasureBase):
