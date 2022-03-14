@@ -101,5 +101,6 @@ class CELoss(torch.nn.Module):
         # y_pred = torch.sigmoid(y_pred)
         # CrossEntropyLoss target needs to have shape (B, D, H, W)
         # Target from pipeline has shape (B, 1, D, H, W)
+        print('hi:',y_pred.size())
         cross_entropy = self.cross_entropy(y_pred, torch.squeeze(y_true, dim=1).long())
         return cross_entropy

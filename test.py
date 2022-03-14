@@ -28,7 +28,7 @@ def main():
     modeList = [mode1, mode2, mode3, mode4, mode5, mode6]
     a = []
     for path, data in zip(path_list, modeList):
-        if os.path.join(args.in_path, path)==r'F:\Forschung\multiorganseg\tensorboard\autotensor.bat':
+        if os.path.join(args.in_path, path) == r'F:\Forschung\multiorganseg\tensorboard\autotensor.bat':
             print('!')
             continue
         event_data = event_accumulator.EventAccumulator(
@@ -63,32 +63,36 @@ def main():
 
 
 def plot_bar():
-    mode1, mode3, mode4, mode5, mode6 = [0.996, 0.934, 0.964, 0.936], \
-                                        [0.987, 0.893, 0.849, 0.847], \
-                                        [0.995, 0.919, 0.938, 0.911], \
-                                        [0.986, 0.850, 0.833, 0.835], \
-                                        [0.988, 0.889, 0.919, 0.899]
-    modelist=[mode1, mode3, mode4, mode5, mode6]
+    mode2, mode3, mode4, mode5, mode6 = [0.896, 0.938, 0.929], \
+                                        [0.883, 0.885, 0.819], \
+                                        [0.901, 0.949, 0.941], \
+                                        [0.852, 0.799, 0.704], \
+                                        [0.880, 0.925, 0.819]
+    modelist = [mode2, mode3, mode4, mode5, mode6]
     width = 0.15
-    index = np.arange(len(mode1))
+    index = np.arange(len(mode2))
     # for mode in modelist:
     #     mode[:]=mode[:]-np.min(mode)
-    r1 = pyplot.bar(index, mode1, width, color='#F27970', label='mode1')
+    r1 = pyplot.bar(index, mode2, width, color='#F27970', label='mode2')
     r2 = pyplot.bar(index + width, mode3, width, color='#BB9727', label='mode3')
     r3 = pyplot.bar(index + width + width, mode4, width, color='#8983bf', label='mode4')
-    r4 = pyplot.bar(index + width + width+width, mode5, width, color='#32B897', label='mode5')
-    r5 = pyplot.bar(index + width + width+width+width, mode6, width, color='#c76da2', label='mode6')
-    pyplot.xticks(index+0.3,['bg','liver','left lung','right lung'],fontsize=25)
+    r4 = pyplot.bar(index + width + width + width, mode5, width, color='#32B897', label='mode5')
+    r5 = pyplot.bar(index + width + width + width + width, mode6, width, color='#c76da2', label='mode6')
+    pyplot.xticks(index + 0.3, ['Liver', 'Left lung', 'Right lung'], fontsize=25)
     pyplot.yticks(fontsize=25)
-    pyplot.ylim(0,1.1)
-    pyplot.xlabel('label class',fontsize=25)
-    pyplot.ylabel('IoU',fontsize=25)
-    pyplot.title('IoU comparison of four classes in five different modes ',fontsize=30)
-    pyplot.legend(prop={'size': 25})
+    pyplot.ylim(0, 1.1)
+    pyplot.xlabel('label class', fontsize=25)
+    pyplot.ylabel('IoU', fontsize=25)
+    pyplot.title('IoU comparison of four classes in five different modes ', fontsize=30)
+    pyplot.legend(prop={'size': 30},loc='lower center')
     pyplot.show()
+
+
 def calculate():
-    a=[0.99587291, 0.93394644, 0.96358706 ,0.93609908]
+    a = [0.936, 0.961, 0.901]
     print(sum(a))
-    print([round(i,3) for i in a])
+    print([round(i, 3) for i in a])
+
+
 if __name__ == '__main__':
-    main()
+    plot_bar()

@@ -48,7 +48,6 @@ class benchmark_unet_2d(BasetRAIN):
             print("CELoss will be used")
         else:
             self.loss = monai.losses.DiceLoss(to_onehot_y=True)
-
             # self.loss =monai.losses.FocalLoss(gamma=2,to_onehot_y=True)
 
             # self.loss= DiceLoss(weight=weights)

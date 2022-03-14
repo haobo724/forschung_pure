@@ -153,18 +153,14 @@ class BasetRAIN(pl.LightningModule):
         pred = torch.softmax(pred, dim=1)
         picked_channel = pred.argmax(dim=1)
 
-        # for index in range(picked_channel.shape[0]):
-        #     iou_individual += self.validation_IOU2(picked_channel[index, ...], y[index, ...].long()).float()
-        #     precision += self.validation_precision(picked_channel[index, ...], y[index, ...].long())
-        #     dice_individual += dice_score(picked_channel[index, ...], y[index, ...].squeeze(1).long(), reduction='none',
-        #                                   bg=True, no_fg_score=1)[:4].float()
-        #     recall += self.validation_recall(picked_channel[index, ...], y[index, ...].long())
+
         precision = self.validation_precision(picked_channel, y.long())
         dice_summean = dice_score(picked_channel, y.squeeze(1).long(),
                                   bg=True, no_fg_score=1).float()
         recall = self.validation_recall(picked_channel, y.long())
+
+        print(picked_channel.size(),picked_channel.dtype)
         iou_summean = self.validation_IOU2(picked_channel, y.long())
-        print("iou_summean:",iou_summean)
         if self.lossflag == 'Dice':
             pred = torch.sigmoid(self(x))
         loss = self.loss.forward(pred, y)
@@ -172,17 +168,10 @@ class BasetRAIN(pl.LightningModule):
         returndic.setdefault("loss", loss)
         returndic.setdefault("recall", recall)
         returndic.setdefault("precision", precision)
-        # returndic.setdefault("iou_individual_bg", iou_individual[0])
-        # returndic.setdefault("iou_individual_liver", iou_individual[1])
-        # returndic.setdefault("iou_individual_left_lung", iou_individual[2])
-        # returndic.setdefault("iou_individual_right_lung", iou_individual[3])
+
         returndic.setdefault("iou_summean", iou_summean)
         returndic.setdefault("dice_summean", dice_summean)
-        #
-        # returndic.setdefault("dice_individual_bg", dice_individual[0])
-        # returndic.setdefault("dice_individual_liver", dice_individual[1])
-        # returndic.setdefault("dice_individual_left_lung", dice_individual[2])
-        # returndic.setdefault("dice_individual_right_lung", dice_individual[3])
+
         self.log('valid_sum_iou', iou_summean,on_epoch=True,on_step=False, logger=True)
 
         return returndic

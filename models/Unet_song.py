@@ -74,8 +74,8 @@ class UNET(nn.Module):
 
 
 def test():
-    x = torch.randn((3, 1, 161, 161))
-    model = UNET(in_channels=1, out_channels=4)
+    x = torch.randn((3, 1, 256, 256))
+    model = UNET(in_channels=1, out_channels=3)
     preds = model(x)
     print(preds.shape)
     assert preds.shape == x.shape
